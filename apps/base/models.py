@@ -4,7 +4,10 @@ from django.db import models
 from django.utils import timezone
 
 now = timezone.now()
-
+from apps.company.models import Company
+from django.contrib.auth.models import Group,Permission
+Group.add_to_class('company',models.ForeignKey(Company,on_delete=models.CASCADE,related_name='company_group',default=0))
+Permission.add_to_class('company',models.ManyToManyField(Company,related_name="company_permission"))
 
 # $ standard base model being used in every object
 class Base(models.Model):
