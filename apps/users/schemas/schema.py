@@ -33,8 +33,10 @@ class PermissionType(DjangoObjectType):
 
 class Query(graphene.ObjectType):
     get_invited_users = graphene.List(UserType, id=graphene.String(required=True))
+    get_user_detail = graphene.Field(UserType, id=graphene.String())
     get_company_permission_groups = graphene.List(GroupType, id=graphene.String(required=True))
     get_permissions_for_company = graphene.List(PermissionType, id=graphene.String(required=True))
+    get_group_users = graphene.List(UserType, id=graphene.String(required=True))
 
     def resolve_get_invited_users(self, info, id):
         company = Company.objects.filter(id=id).first()
@@ -42,11 +44,17 @@ class Query(graphene.ObjectType):
             return company.invited_users.all()
         return []
 
+    def resolve_get_user_detail(self, info, id):
+        return User.objects.filter(id=id).first()
+
     def resolve_get_company_permission_groups(self, info, id):
         return Group.objects.filter(company_id=id)
 
     def resolve_get_permissions_for_company(self, info, id):
         return Permission.objects.filter(company_id=id)
+    
+    def resolve_get_group_users(self, info, id):
+        return User.objects.filter(groups__id=id)
 
 
 class RegisterUser(graphene.Mutation):
@@ -295,6 +303,49 @@ class DeleteUserFromGroup(graphene.Mutation):
         return DeleteUserFromGroup(group=group, is_deleted=True, verification_message='The user has been removed from the group!')
 
 
+class ChangePassword(graphene.Mutation):
+    user = graphene.Field(UserType, token=graphene.String(required=True))
+    verification_message = graphene.String() 
+
+    class Arguments:
+        password = graphene.String(required=True)
+        confirm_password = graphene.String(required=True)
+
+    def mutate(self, info, **kwargs):
+        password = kwargs.get('password')
+        confirm_password = kwargs.get('confirm_password')
+
+        if password != confirm_password:
+            raise GraphQLError('Password and Confirm Passowrd do not match!')
+
+        user = info.context.user
+        if user:
+            user.set_password(password)
+            user.save()
+            return ChangePassword(user=user, verification_message='Password has been changed successfully!')
+        raise GraphQLError('User is not logged in, please login to proceed!')
+
+
+class SetCompanyActiveForUser(graphene.Mutation):
+    user = graphene.Field(UserType)
+    verification_message = graphene.String() 
+
+    class Arguments:
+        id = graphene.String(required=True)
+        company_id = graphene.String(required=True)
+
+    def mutate(self, info, **kwargs):
+        id = kwargs.get('id')
+        company_id = kwargs.get('company_id')
+        user = User.objects.filter(id=id).first()
+        company = Company.objects.filter(id=company_id).first()
+        if user and company:
+            user.company_active = company
+            user.save(update_fields=["company_active"])
+            return SetCompanyActiveForUser(user=user, verification_message='Set the company as active for this user.')
+        raise GraphQLError('User or company not found!')
+
+
 class Mutation(graphene.ObjectType):
     register_user = RegisterUser.Field()
     activate_user = ActivateUser.Field()
@@ -309,4 +360,6 @@ class Mutation(graphene.ObjectType):
     delete_group = DeleteGroup.Field()
     add_user_to_group = AddUserToGroup.Field()
     delete_user_from_group = DeleteUserFromGroup.Field()
-    
+    change_password = ChangePassword.Field()
+    set_company_active_for_user = SetCompanyActiveForUser.Field()
+

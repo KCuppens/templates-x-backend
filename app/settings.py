@@ -52,6 +52,11 @@ LOCAL_APPS = [
     "apps.base",
     "apps.data",
     "apps.s3",
+    "apps.templates",
+    "apps.users",
+    "apps.company",
+    "apps.config",
+    "apps.contact",
 ]
 
 INSTALLED_APPS = DEFAULT_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -161,6 +166,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 GRAPHENE = {
     "SCHEMA": "app.schemas.schema.schema",
     "MIDDLEWARE": ("graphene_django.debug.DjangoDebugMiddleware",),
+}
+GRAPHENE_DJANGO_EXTRAS = {
+    'DEFAULT_PAGINATION_CLASS': 'graphene_django_extras.paginations.LimitOffsetGraphqlPagination',
+    'DEFAULT_PAGE_SIZE': 20,
+    'MAX_PAGE_SIZE': 50,
+    'CACHE_ACTIVE': True,
+    'CACHE_TIMEOUT': 300    # seconds
 }
 
 # SITE FRAMEWORK

@@ -13,3 +13,4 @@ class Company(models.Model):
     # Company site url
     site = models.URLField(max_length=255, null=True, blank=True)
 
+
