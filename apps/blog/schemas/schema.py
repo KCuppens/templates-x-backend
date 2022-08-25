@@ -9,12 +9,12 @@ class BlogType(DjangoObjectType):
     class Meta:
         model = Blog
         fields = ['id', 'name', 'description', 'image', 'keywords']
-        filter_fields = [
+        filter_fields = {
             "id": ("exact",),
             "name": ("exact", "icontains", "istartswith"),
             "description": ("exact", "icontains", "istartswith"),
             "keywords": ("exact",),
-        ]
+        }
 
 
 class Query(graphene.ObjectType):
@@ -23,7 +23,6 @@ class Query(graphene.ObjectType):
 
     def resolve_get_blog_detail(self, info, id):
         return Blog.objects.filter(id=id).first()
-
 
 
 class CreateBlog(graphene.Mutation):
