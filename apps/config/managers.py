@@ -6,4 +6,4 @@ class ConfigManager(models.Manager):
         qs = self.filter(key_name=key_name).first()
         if qs:
             return str(qs.value) if qs.value else ""
-        return ''
+        return ""

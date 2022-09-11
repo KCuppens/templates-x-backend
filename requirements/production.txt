@@ -1,0 +1,4 @@
+# These are the requirements for production environments.
+# PRECAUTION: avoid production dependencies that aren't in development
+-r base.txt
+

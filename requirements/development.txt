@@ -1,0 +1,26 @@
+# Here are the requirements for developers.
+# It typically adds a bunch of libraries used for code kwalitee analysis and debugging.
+-r base.txt
+
+ipdb==0.13.9  # https://github.com/gotcha/ipdb
+psycopg2-binary==2.9.3  # Postgresql database binary - https://github.com/psycopg/psycopg2
+
+
+# Testing
+# ------------------------------------------------------------------------------
+django-pytest==0.2.0
+pytest-django==4.5.2
+
+# Code quality
+# ------------------------------------------------------------------------------
+autopep8==1.7.0
+black==22.6.0
+flake8==5.0.4
+pylint==2.15.0
+unimport==0.11.1
+isort==5.10.1
+
+# Dependency Tree
+# ------------------------------------------------------------------------------
+pipdeptree==2.2.1  # Extra top packages for requirements - https://github.com/naiquevin/pipdeptree
+pip-review==1.2.0  # Checking if packages need updates - https://github.com/jgonggrijp/pip-review

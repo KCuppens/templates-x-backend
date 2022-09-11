@@ -1,24 +1,34 @@
-from apps.blog.models import Blog
+import graphene
 from graphene_django import DjangoObjectType
 from graphene_file_upload.scalars import Upload
-from graphene_django_extras import DjangoFilterPaginateListField, LimitOffsetGraphqlPagination
-import graphene
+from graphene_django_filter import AdvancedDjangoFilterConnectionField, AdvancedFilterSet
+from apps.blog.models import Blog
+from graphql_jwt.decorators import staff_member_required
+
+
+class BlogFilter(AdvancedFilterSet):
+    class Meta:
+        model = Blog
+        fields = {
+            "id": ("exact",),
+            "name": ("exact", "contains"),
+            "description": ("contains",),
+            "keywords": ("contains",),
+        }
 
 
 class BlogType(DjangoObjectType):
     class Meta:
         model = Blog
-        fields = ['id', 'name', 'description', 'image', 'keywords']
-        filter_fields = {
-            "id": ("exact",),
-            "name": ("exact", "icontains", "istartswith"),
-            "description": ("exact", "icontains", "istartswith"),
-            "keywords": ("exact",),
-        }
+        fields = '__all__'
+        interfaces = (graphene.relay.Node,)
+        filterset_class = BlogFilter
 
 
 class Query(graphene.ObjectType):
-    get_filter_blogs = DjangoFilterPaginateListField(BlogType, pagination=LimitOffsetGraphqlPagination())
+    get_filter_blogs = AdvancedDjangoFilterConnectionField(
+        BlogType
+    )
     get_blog_detail = graphene.Field(BlogType, id=graphene.String())
 
     def resolve_get_blog_detail(self, info, id):
@@ -27,7 +37,7 @@ class Query(graphene.ObjectType):
 
 class CreateBlog(graphene.Mutation):
     blog = graphene.Field(BlogType)
-    message = graphene.String()
+    verification_message = graphene.String()
 
     class Arguments:
         name = graphene.String(required=True)
@@ -35,11 +45,12 @@ class CreateBlog(graphene.Mutation):
         image = Upload()
         keywords = graphene.String()
 
+    @staff_member_required
     def mutate(self, info, *args, **kwargs):
-        name = kwargs.get('name', '')
-        description = kwargs.get('description', '')
-        image = kwargs.get('image', '')
-        keywords = kwargs.get('keywords', '')
+        name = kwargs.get("name", "")
+        description = kwargs.get("description", "")
+        image = kwargs.get("image", "")
+        keywords = kwargs.get("keywords", "")
 
         blog = Blog.objects.create(
             name=name,
@@ -47,26 +58,30 @@ class CreateBlog(graphene.Mutation):
             image=image,
             keywords=keywords
         )
-        return CreateBlog(blog=blog, message="Blog has been created.")
+        return CreateBlog(
+            blog=blog,
+            verification_message="Blog has been created."
+        )
 
 
 class UpdateBlog(graphene.Mutation):
     blog = graphene.Field(BlogType)
-    message = graphene.String()
+    verification_message = graphene.String()
 
     class Arguments:
-        id = graphene.Int(required=True)
+        id = graphene.String(required=True)
         name = graphene.String(required=True)
         description = graphene.String()
         image = Upload()
         keywords = graphene.String()
 
+    @staff_member_required
     def mutate(self, info, *args, **kwargs):
-        id = kwargs.get('id')
-        name = kwargs.get('name')
-        description = kwargs.get('description')
-        image = kwargs.get('image')
-        keywords = kwargs.get('keywords')
+        id = kwargs.get("id")
+        name = kwargs.get("name")
+        description = kwargs.get("description")
+        image = kwargs.get("image")
+        keywords = kwargs.get("keywords")
 
         blog = Blog.objects.filter(id=id).first()
         if blog:
@@ -74,27 +89,41 @@ class UpdateBlog(graphene.Mutation):
             blog.name = name
             blog.image = image
             blog.keywords = keywords
-            blog.save(update_fields=['description', 'name', 'image', 'keywords'])
-            message = "Blog has been updated."
+            blog.save(
+                update_fields=[
+                    "description",
+                    "name",
+                    "image",
+                    "keywords"
+                ]
+            )
+            verification_message = "Blog has been updated."
         else:
-            message = "Blog doesn\'t exist."
-        return UpdateBlog(blog=blog, message=message)
+            verification_message = "Blog doesn't exist."
+        return UpdateBlog(
+            blog=blog,
+            verification_message=verification_message
+        )
 
 
 class DeleteBlog(graphene.Mutation):
-    message = graphene.String()
+    verification_message = graphene.String()
 
     class Arguments:
         id = graphene.String(required=True)
 
-    def mutate(self, info, id):
+    @staff_member_required
+    def mutate(self, info, **kwargs):
+        id = kwargs.get("id")
         blog = Blog.objects.filter(id=id).first()
         if blog:
             blog.delete()
-            message = "Blog has been deleted."
+            verification_message = "Blog has been deleted."
         else:
-            message = "Blog does not exist."
-        return Blog(message=message)
+            verification_message = "Blog does not exist."
+        return DeleteBlog(
+            verification_message=verification_message
+        )
 
 
 class Mutation(graphene.ObjectType):

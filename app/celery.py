@@ -4,12 +4,11 @@ import os
 
 from celery import Celery
 from django.apps import apps
-from django.conf import settings
 from kombu.entity import Exchange, Queue
 
 # set the default Django settings module for the 'celery' program.
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings")
-app = Celery("app", broker=settings.CELERY_BROKER_URL)
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "app.settings.development")
+app = Celery("app")
 
 # Using a string here means the worker will not have to
 # pickle the object when using Windows.

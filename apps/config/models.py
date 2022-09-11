@@ -1,6 +1,6 @@
-from apps.base.models import Base
 from django.db import models
 
+from apps.base.models import Base
 from apps.config.managers import ConfigManager
 
 
