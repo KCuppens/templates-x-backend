@@ -1,7 +1,10 @@
 import graphene
 from django.contrib.auth import get_user_model
 from graphene_django import DjangoObjectType
-from graphene_django_filter import AdvancedDjangoFilterConnectionField, AdvancedFilterSet
+from graphene_django_filter import (
+    AdvancedDjangoFilterConnectionField,
+    AdvancedFilterSet,
+)
 from graphql_jwt.decorators import login_required
 
 from apps.company.models import Company
@@ -20,15 +23,14 @@ class CompanyFilter(AdvancedFilterSet):
 class CompanyType(DjangoObjectType):
     class Meta:
         model = Company
-        fields = '__all__'
+        fields = "__all__"
         interfaces = (graphene.relay.Node,)
         filterset_class = CompanyFilter
 
 
 class Query(graphene.ObjectType):
     get_company_by_id = graphene.Field(
-        CompanyType,
-        id=graphene.String(required=True)
+        CompanyType, id=graphene.String(required=True)
     )
     get_companies_by_administrator_id = graphene.List(
         CompanyType, id=graphene.String(required=True)
@@ -36,9 +38,7 @@ class Query(graphene.ObjectType):
     get_companies_by_user_id = graphene.List(
         CompanyType, id=graphene.String(required=True)
     )
-    get_company_filtered = AdvancedDjangoFilterConnectionField(
-        CompanyType
-    )
+    get_company_filtered = AdvancedDjangoFilterConnectionField(CompanyType)
 
     @login_required
     def resolve_get_company_by_id(self, info, id):
@@ -71,7 +71,7 @@ class CreateCompany(graphene.Mutation):
         )
         return CreateCompany(
             company=company,
-            verification_message="Company has been created."
+            verification_message="Company has been created.",
         )
 
 
@@ -100,7 +100,9 @@ class UpdateCompany(graphene.Mutation):
             verification_message = "Company has been updated."
         else:
             verification_message = "Company doesn't exist."
-        return UpdateCompany(company=company, verification_message=verification_message)
+        return UpdateCompany(
+            company=company, verification_message=verification_message
+        )
 
 
 class DeleteCompany(graphene.Mutation):
@@ -167,7 +169,9 @@ class InviteUser(graphene.Mutation):
                     "new_user_invite_email", user_exists, user_exists.email
                 )
                 company.invited_users.add(user)
-            verification_message = f"User with {email} has been invited to {company.name}."
+            verification_message = (
+                f"User with {email} has been invited to {company.name}."
+            )
         else:
             verification_message = "Company does not exist."
         return InviteUser(verification_message=verification_message)

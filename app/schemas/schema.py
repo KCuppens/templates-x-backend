@@ -1,21 +1,16 @@
 from graphene import ObjectType, Schema
 
-from apps.blog.schemas.schema import Query as BlogQuery
 from apps.blog.schemas.schema import Mutation as BlogMutation
-
-from apps.company.schemas.schema import Query as CompanyQuery
+from apps.blog.schemas.schema import Query as BlogQuery
 from apps.company.schemas.schema import Mutation as CompanyMutation
-
+from apps.company.schemas.schema import Query as CompanyQuery
 from apps.contact.schemas.schema import Mutation as ContactMutation
-
-from apps.storages.schemas.schema import Query as StorageQuery
 from apps.storages.schemas.schema import Mutation as StorageMutation
-
-from apps.template.schemas.schema import Query as TemplateQuery
+from apps.storages.schemas.schema import Query as StorageQuery
 from apps.template.schemas.schema import Mutation as TemplateMutation
-
-from apps.users.schemas.schema import Query as UserQuery
+from apps.template.schemas.schema import Query as TemplateQuery
 from apps.users.schemas.schema import Mutation as UserMutation
+from apps.users.schemas.schema import Query as UserQuery
 
 
 class Query(
@@ -24,7 +19,7 @@ class Query(
     StorageQuery,
     TemplateQuery,
     UserQuery,
-    ObjectType
+    ObjectType,
 ):
     pass
 
@@ -36,7 +31,7 @@ class Mutation(
     StorageMutation,
     TemplateMutation,
     UserMutation,
-    ObjectType
+    ObjectType,
 ):
     pass
 

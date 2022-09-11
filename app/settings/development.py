@@ -6,7 +6,7 @@ ALLOWED_HOSTS = [
     "localhost",
     "165.22.90.173",
     "api.converter-x.com",
-    "converter-x.com"
+    "converter-x.com",
 ]
 CORS_ORIGIN_ALLOW_ALL = False
 CORS_ORIGIN_WHITELIST = (

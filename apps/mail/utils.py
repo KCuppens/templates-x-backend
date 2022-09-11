@@ -8,7 +8,10 @@ from apps.mail.models import EmailTemplate
 
 def send_email(key_name, to_name, to_email, params={}):
     mailjet = Client(
-        auth=(os.environ["MJ_APIKEY_PUBLIC"], os.environ["MJ_APIKEY_PRIVATE"]),
+        auth=(
+            os.environ["MJ_APIKEY_PUBLIC"],
+            os.environ["MJ_APIKEY_PRIVATE"],
+        ),
         version="v3.1",
     )
     if mailjet:

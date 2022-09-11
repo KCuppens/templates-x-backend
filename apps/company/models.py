@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
-from django.db import models
-from apps.base.models import Base
 from django.contrib.auth.models import Group, Permission
+from django.db import models
+
+from apps.base.models import Base
 
 User = get_user_model()
 
@@ -9,9 +10,7 @@ User = get_user_model()
 class Company(Base):
     # Company administrator
     administrator = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        null=True
+        User, on_delete=models.CASCADE, null=True
     )
     # All invited users
     invited_users = models.ManyToManyField(
@@ -29,14 +28,12 @@ Group.add_to_class(
         Company,
         on_delete=models.CASCADE,
         related_name="company_group_permissions",
-        null=True
+        null=True,
     ),
 )
 Permission.add_to_class(
     "company",
     models.ManyToManyField(
-        Company,
-        related_name="company_permission_group",
-        blank=True
-    )
+        Company, related_name="company_permission_group", blank=True
+    ),
 )

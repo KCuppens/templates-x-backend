@@ -1,11 +1,18 @@
 import graphene
 from graphene_django import DjangoObjectType
-from graphene_django_filter import AdvancedDjangoFilterConnectionField, AdvancedFilterSet
-from graphql_jwt.decorators import staff_member_required, login_required
+from graphene_django_filter import (
+    AdvancedDjangoFilterConnectionField,
+    AdvancedFilterSet,
+)
+from graphql_jwt.decorators import login_required, staff_member_required
 
 from apps.template.models import Template, TemplateCategory
-from apps.template.utils import (convert_html_to_docx, convert_html_to_jpeg,
-                                  convert_html_to_pdf, convert_html_to_png)
+from apps.template.utils import (
+    convert_html_to_docx,
+    convert_html_to_jpeg,
+    convert_html_to_pdf,
+    convert_html_to_png,
+)
 
 
 class TemplateCategoryType(DjangoObjectType):
@@ -41,11 +48,13 @@ class Query(graphene.ObjectType):
     get_templates_by_administrator_id = graphene.List(TemplateType)
     get_templates = graphene.List(TemplateType)
     get_public_templates = graphene.List(TemplateType)
-    get_template_category_id = graphene.Field(TemplateCategoryType, id=graphene.String(required=True))
-    get_template_categories = graphene.List(TemplateCategoryType, id=graphene.String(required=True))
-    get_filter_templates = AdvancedDjangoFilterConnectionField(
-        TemplateType
+    get_template_category_id = graphene.Field(
+        TemplateCategoryType, id=graphene.String(required=True)
     )
+    get_template_categories = graphene.List(
+        TemplateCategoryType, id=graphene.String(required=True)
+    )
+    get_filter_templates = AdvancedDjangoFilterConnectionField(TemplateType)
 
     @login_required
     def resolve_get_template_by_id(self, info, id):
@@ -53,14 +62,18 @@ class Query(graphene.ObjectType):
 
     @login_required
     def resolve_get_templates_by_administrator_id(self, info):
-        return Template.objects.filter(company__administrator_id=info.context.user.id)
+        return Template.objects.filter(
+            company__administrator_id=info.context.user.id
+        )
 
     @login_required
     def resolve_get_templates(self, info):
         return Template.objects.all().order_by("-id")
 
     def resolve_get_public_templates(self, info):
-        return Template.objects.filter(is_approved=True, is_public=True).order_by("-id")
+        return Template.objects.filter(
+            is_approved=True, is_public=True
+        ).order_by("-id")
 
     @login_required
     def resolve_get_template_category_id(self, info, id):
@@ -103,11 +116,14 @@ class CreateTemplate(graphene.Mutation):
             is_active=is_active,
         )
         for category in categories:
-            category_obj = TemplateCategory.objects.filter(id=category).first()
+            category_obj = TemplateCategory.objects.filter(
+                id=category
+            ).first()
             if category_obj:
                 template.categories.add(category_obj)
         return CreateTemplate(
-            template=template, verification_message="Template created successfully."
+            template=template,
+            verification_message="Template created successfully.",
         )
 
 
@@ -127,7 +143,8 @@ class CopyTemplate(graphene.Mutation):
             clone.pk = None
             clone.save()
         return CopyTemplate(
-            template=clone, verification_message="Template copied successfully."
+            template=clone,
+            verification_message="Template copied successfully.",
         )
 
 
@@ -206,7 +223,9 @@ class UpdateTemplate(graphene.Mutation):
             )
             template.categories.clear()
             for category in categories:
-                category_obj = TemplateCategory.objects.filter(id=category).first()
+                category_obj = TemplateCategory.objects.filter(
+                    id=category
+                ).first()
                 if category_obj:
                     template.categories.add(category_obj)
             return UpdateTemplate(
@@ -230,7 +249,9 @@ class DeleteTemplate(graphene.Mutation):
         template = Template.objects.filter(id=id).first()
         if template:
             template.delete()
-            return DeleteTemplate(verification_message="Template deleted successfully.")
+            return DeleteTemplate(
+                verification_message="Template deleted successfully."
+            )
         else:
             return DeleteTemplate(verification_message="Template not found.")
 
@@ -245,7 +266,9 @@ class BatchDeleteTemplate(graphene.Mutation):
     def mutate(self, info, **kwargs):
         objects = kwargs.get("objects", [])
         Template.objects.filter(id__in=objects).delete()
-        return DeleteTemplate(verification_message="Templates in batch deleted.")
+        return DeleteTemplate(
+            verification_message="Templates in batch deleted."
+        )
 
 
 class ActivateTemplate(graphene.Mutation):
@@ -264,7 +287,9 @@ class ActivateTemplate(graphene.Mutation):
                 verification_message="Template activated successfully."
             )
         else:
-            return ActivateTemplate(verification_message="Template not found.")
+            return ActivateTemplate(
+                verification_message="Template not found."
+            )
 
 
 class MakeTemplatePublic(graphene.Mutation):
@@ -283,7 +308,9 @@ class MakeTemplatePublic(graphene.Mutation):
                 verification_message="Template made public successfully."
             )
         else:
-            return MakeTemplatePublic(verification_message="Template not found.")
+            return MakeTemplatePublic(
+                verification_message="Template not found."
+            )
 
 
 class ApprovePublicTemplate(graphene.Mutation):
@@ -302,7 +329,9 @@ class ApprovePublicTemplate(graphene.Mutation):
                 verification_message="Template approved successfully."
             )
         else:
-            return ApprovePublicTemplate(verification_message="Template not found.")
+            return ApprovePublicTemplate(
+                verification_message="Template not found."
+            )
 
 
 class CreateTemplateCategory(graphene.Mutation):
@@ -349,7 +378,9 @@ class UpdateTemplateCategory(graphene.Mutation):
             template_category.save(update_fields=["company_id", "name"])
             return UpdateTemplateCategory(
                 template_category=template_category,
-                verification_message="Template category updated successfully.",
+                verification_message=(
+                    "Template category updated successfully."
+                ),
             )
         else:
             return UpdateTemplateCategory(
@@ -401,7 +432,8 @@ class ExportTemplate(graphene.Mutation):
             else:
                 file = None
             return ExportTemplate(
-                verification_message="Template exported successfully.", file=file
+                verification_message="Template exported successfully.",
+                file=file,
             )
         else:
             return ExportTemplate(verification_message="Template not found.")

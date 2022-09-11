@@ -29,29 +29,25 @@ class Base(models.Model):
         verbose_name="Unique identification",
     )
     date_created = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Date of creation"
+        auto_now=True, verbose_name="Date of creation"
     )
     date_published = models.DateTimeField(
         default=timezone.now,
         blank=True,
         null=True,
-        verbose_name="Publishingdate"
+        verbose_name="Publishingdate",
     )
     date_expired = models.DateTimeField(
         blank=True, null=True, verbose_name="Expiring date"
     )
     date_updated = models.DateTimeField(
-        auto_now=True,
-        verbose_name="Date of last update"
+        auto_now=True, verbose_name="Date of last update"
     )
     date_deleted = models.DateTimeField(
         null=True, blank=True, verbose_name="Delete date"
     )
     state = models.CharField(
-        max_length=255,
-        choices=STATES,
-        default=STATE_DRAFT
+        max_length=255, choices=STATES, default=STATE_DRAFT
     )
 
     def __str__(self):

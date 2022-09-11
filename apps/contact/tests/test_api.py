@@ -21,12 +21,9 @@ class ContactTestCase(GraphQLTestCase):
                 "question": "Test question",
                 "message": "Test message",
                 "email": "Test email",
-            }
+            },
         )
         assert (
-            response.json()["data"]["createContact"]
-            ["verificationMessage"]
-            ==
-            "Thanks for contacting us. "
-            "We will get back to you ASAP."
+            response.json()["data"]["createContact"]["verificationMessage"]
+            == "Thanks for contacting us. We will get back to you ASAP."
         )

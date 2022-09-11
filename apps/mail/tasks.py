@@ -15,5 +15,6 @@ def send_email(key_name, to_name, to_email, params={}):
     try:
         return send_email(key_name, to_name, to_email, params)
     except Exception as e:
-        return "Exception raised, it would"\
-               f"retry after 5 seconds! Exception: {e}"
+        return (
+            f"Exception raised, it wouldretry after 5 seconds! Exception: {e}"
+        )

@@ -1,9 +1,13 @@
 import graphene
 from graphene_django import DjangoObjectType
+from graphene_django_filter import (
+    AdvancedDjangoFilterConnectionField,
+    AdvancedFilterSet,
+)
 from graphene_file_upload.scalars import Upload
-from graphene_django_filter import AdvancedDjangoFilterConnectionField, AdvancedFilterSet
-from apps.blog.models import Blog
 from graphql_jwt.decorators import staff_member_required
+
+from apps.blog.models import Blog
 
 
 class BlogFilter(AdvancedFilterSet):
@@ -20,15 +24,13 @@ class BlogFilter(AdvancedFilterSet):
 class BlogType(DjangoObjectType):
     class Meta:
         model = Blog
-        fields = '__all__'
+        fields = "__all__"
         interfaces = (graphene.relay.Node,)
         filterset_class = BlogFilter
 
 
 class Query(graphene.ObjectType):
-    get_filter_blogs = AdvancedDjangoFilterConnectionField(
-        BlogType
-    )
+    get_filter_blogs = AdvancedDjangoFilterConnectionField(BlogType)
     get_blog_detail = graphene.Field(BlogType, id=graphene.String())
 
     def resolve_get_blog_detail(self, info, id):
@@ -56,11 +58,10 @@ class CreateBlog(graphene.Mutation):
             name=name,
             description=description,
             image=image,
-            keywords=keywords
+            keywords=keywords,
         )
         return CreateBlog(
-            blog=blog,
-            verification_message="Blog has been created."
+            blog=blog, verification_message="Blog has been created."
         )
 
 
@@ -90,19 +91,13 @@ class UpdateBlog(graphene.Mutation):
             blog.image = image
             blog.keywords = keywords
             blog.save(
-                update_fields=[
-                    "description",
-                    "name",
-                    "image",
-                    "keywords"
-                ]
+                update_fields=["description", "name", "image", "keywords"]
             )
             verification_message = "Blog has been updated."
         else:
             verification_message = "Blog doesn't exist."
         return UpdateBlog(
-            blog=blog,
-            verification_message=verification_message
+            blog=blog, verification_message=verification_message
         )
 
 
@@ -121,9 +116,7 @@ class DeleteBlog(graphene.Mutation):
             verification_message = "Blog has been deleted."
         else:
             verification_message = "Blog does not exist."
-        return DeleteBlog(
-            verification_message=verification_message
-        )
+        return DeleteBlog(verification_message=verification_message)
 
 
 class Mutation(graphene.ObjectType):

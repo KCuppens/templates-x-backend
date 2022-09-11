@@ -8,7 +8,10 @@ from graphene_django import DjangoObjectType
 from graphene_file_upload.scalars import Upload
 
 from apps.company.models import Company
-from apps.s3.file_handling import init_external_session, upload_file_external
+from apps.s3.file_handling import (
+    init_external_session,
+    upload_file_external,
+)
 from apps.storages.models import Storage
 
 
@@ -20,8 +23,7 @@ class StorageType(DjangoObjectType):
 
 class Query(graphene.ObjectType):
     get_company_storages = graphene.List(
-        StorageType,
-        id=graphene.String(required=True)
+        StorageType, id=graphene.String(required=True)
     )
 
     def resolve_get_company_storages(self, info, id, **kwargs):
@@ -53,11 +55,9 @@ class CreateStorage(graphene.Mutation):
         company = kwargs.get("company")
         is_selected = kwargs.get("is_selected", False)
         if is_selected:
-            Storage.objects.filter(
-                company_id=company
-            ).update(
+            Storage.objects.filter(company_id=company).update(
                 is_selected=False
-                )
+            )
         if storage_type == "google":
             auth_file = kwargs.get("auth_file")
             project_id = kwargs.get("project_id")
@@ -91,8 +91,7 @@ class CreateStorage(graphene.Mutation):
             verification_message = "Storage type not found"
 
         return CreateStorage(
-            storage=storage,
-            verification_message=verification_message
+            storage=storage, verification_message=verification_message
         )
 
 
@@ -123,9 +122,7 @@ class UpdateStorage(graphene.Mutation):
         company = kwargs.get("company")
         is_selected = kwargs.get("is_selected", False)
         if is_selected:
-            Storage.objects.filter(
-                company_id=company
-            ).update(
+            Storage.objects.filter(company_id=company).update(
                 is_selected=False
             )
         storage = Storage.objects.filter(id=id).first()
@@ -178,8 +175,7 @@ class UpdateStorage(graphene.Mutation):
             verification_message = "Storage type not found"
 
         return UpdateStorage(
-            storage=storage,
-            verification_message=verification_message
+            storage=storage, verification_message=verification_message
         )
 
 
@@ -195,9 +191,9 @@ class SelectStorage(graphene.Mutation):
         storage = Storage.objects.filter(id=id).first()
 
         if storage:
-            Storage.objects.filter(
-                company_id=storage.company
-            ).update(is_selected=False)
+            Storage.objects.filter(company_id=storage.company).update(
+                is_selected=False
+            )
 
         if storage:
             storage.is_selected = not storage.is_selected
@@ -205,7 +201,7 @@ class SelectStorage(graphene.Mutation):
 
         return UpdateStorage(
             storage=storage,
-            verification_message="Storage (de)selected successfully"
+            verification_message="Storage (de)selected successfully",
         )
 
 
@@ -244,10 +240,11 @@ class UploadFile(graphene.Mutation):
                 company_id=company, is_selected=True
             ).first()
             if storage.storage_type == "google":
-                storage_client = google_storage.Client.\
-                    from_service_account_json(
+                storage_client = (
+                    google_storage.Client.from_service_account_json(
                         storage.auth_file
                     )
+                )
                 bucket = storage_client.get_bucket(storage.bucket_name)
                 blob = bucket.blob(file.name)
                 blob.upload_from_filename(file)
@@ -256,8 +253,9 @@ class UploadFile(graphene.Mutation):
                 session = init_external_session(
                     storage.access_key, storage.secret_key, storage.region
                 )
-                full_path = f"{settings.MEDIA_ROOT}{storage.id}/"\
-                            f"files/{file.name}"
+                full_path = (
+                    f"{settings.MEDIA_ROOT}{storage.id}/files/{file.name}"
+                )
                 s3_path = f"/templatesx/{file.name}"
                 default_storage.save(full_path, file)
                 url = upload_file_external(

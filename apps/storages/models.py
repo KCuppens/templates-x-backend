@@ -1,6 +1,6 @@
-import apps.data.constants as C
 from django.db import models
 
+import apps.data.constants as C
 from apps.base.models import Base
 from apps.company.models import Company
 
@@ -21,8 +21,7 @@ class Storage(Base):
 
     # Google storage
     auth_file = models.FileField(
-        upload_to="storage/google/",
-        blank=True, null=True
+        upload_to="storage/google/", blank=True, null=True
     )
     project_id = models.CharField(max_length=255, blank=True, null=True)
 

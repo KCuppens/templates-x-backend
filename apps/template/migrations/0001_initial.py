@@ -8,7 +8,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -153,7 +152,10 @@ class Migration(migrations.Migration):
                 ),
                 ("name", models.CharField(max_length=100)),
                 ("summary", models.TextField(blank=True)),
-                ("screenshot", models.CharField(blank=True, max_length=255)),
+                (
+                    "screenshot",
+                    models.CharField(blank=True, max_length=255),
+                ),
                 ("content_html", models.TextField(blank=True)),
                 ("content_json", models.TextField(blank=True)),
                 ("is_active", models.BooleanField(default=True)),
@@ -161,7 +163,9 @@ class Migration(migrations.Migration):
                 ("is_approved", models.BooleanField(default=False)),
                 (
                     "categories",
-                    models.ManyToManyField(blank=True, to="template.templatecategory"),
+                    models.ManyToManyField(
+                        blank=True, to="template.templatecategory"
+                    ),
                 ),
                 (
                     "company",

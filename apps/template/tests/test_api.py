@@ -9,10 +9,7 @@ from apps.template.models import Template, TemplateCategory
 class TemplateTestCase(JSONWebTokenTestCase):
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
-        return Company.objects.create(
-            name="Test",
-            administrator=self.user
-        )
+        return Company.objects.create(name="Test", administrator=self.user)
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_template(self):
@@ -23,14 +20,14 @@ class TemplateTestCase(JSONWebTokenTestCase):
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_template_category(self):
-        return TemplateCategory.objects.create(name="Test", company=self.company)
+        return TemplateCategory.objects.create(
+            name="Test", company=self.company
+        )
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
         return get_user_model().objects.create_user(
-            username="test",
-            password="dolphins",
-            is_staff=True
+            username="test", password="dolphins", is_staff=True
         )
 
     def setUp(self):
@@ -41,8 +38,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
         self.client.authenticate(self.user)
 
     def test_get_template_by_id(self):
-        query = (
-            """
+        query = """
             query getTemplateById($id: String!){
                 getTemplateById(id: $id){
                     name,
@@ -50,54 +46,49 @@ class TemplateTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        )
         variables = {"id": str(self.template.id)}
         response = self.client.execute(query, variables)
         assert response.data["getTemplateById"]["id"]
 
     def test_get_templates_by_administrator_id(self):
         self.client.authenticate(self.user)
-        query = (
-            """
+        query = """
             query {
                 getTemplatesByAdministratorId{
                     name
                 }
             }
             """
-        )
         response = self.client.execute(query)
-        assert response.data["getTemplatesByAdministratorId"][0]["name"] == "Test"
+        assert (
+            response.data["getTemplatesByAdministratorId"][0]["name"]
+            == "Test"
+        )
 
     def test_get_templates(self):
-        query = (
-            """
+        query = """
             query{
                 getTemplates{
                     name
                 }
             }
             """
-        )
         response = self.client.execute(query)
         assert response.data["getTemplates"][0]["name"] == "Test"
 
     def test_get_public_templates(self):
-        query = (
-            """
+        query = """
             query{
                 getPublicTemplates{
                     name
                 }
             }
             """
-        )
         response = self.client.execute(query)
         assert response.data["getPublicTemplates"] == []
 
     def test_get_template_category_id(self):
-        query = (
-            """
+        query = """
             query getTemplateCategoryId($id: String!){
                 getTemplateCategoryId(id: $id){
                     name,
@@ -105,28 +96,24 @@ class TemplateTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        )
         variables = {"id": str(self.template_category.id)}
         response = self.client.execute(query, variables)
         assert response.data["getTemplateCategoryId"]["id"]
 
     def test_get_template_categories(self):
-        query = (
-            """
+        query = """
             query getTemplateCategories($id: String!){
                 getTemplateCategories(id: $id){
                     name
                 }
             }
             """
-        )
         variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
         assert response.data["getTemplateCategories"][0]["name"] == "Test"
 
     def test_create_template(self):
-        query = (
-            """
+        query = """
             mutation createTemplate(
                 $company: String!,
                 $name: String!,
@@ -152,7 +139,6 @@ class TemplateTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        )
         variables = {
             "company": str(self.company.id),
             "name": "Test",
@@ -160,15 +146,21 @@ class TemplateTestCase(JSONWebTokenTestCase):
             "content_html": "test123",
             "content_json": "test123",
             "is_active": True,
-            "categories": [str(self.template_category.id), ],
+            "categories": [
+                str(self.template_category.id),
+            ],
         }
         response = self.client.execute(query, variables)
         assert response.data["createTemplate"]["template"]["id"]
-        assert response.data["createTemplate"]["template"]["categories"][0]["name"] == "Test"
+        assert (
+            response.data["createTemplate"]["template"]["categories"][0][
+                "name"
+            ]
+            == "Test"
+        )
 
     def test_update_template(self):
-        query = (
-            """
+        query = """
             mutation updateTemplate(
                 $id: String!,
                 $company: String!,
@@ -196,7 +188,6 @@ class TemplateTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        )
         variables = {
             "id": str(self.template.id),
             "company": str(self.company.id),
@@ -205,22 +196,27 @@ class TemplateTestCase(JSONWebTokenTestCase):
             "content_html": "test123",
             "content_json": "test123",
             "is_active": True,
-            "categories": [str(self.template_category.id), ],
+            "categories": [
+                str(self.template_category.id),
+            ],
         }
         response = self.client.execute(query, variables)
         assert response.data["updateTemplate"]["template"]["id"]
-        assert response.data["updateTemplate"]["template"]["categories"][0]["name"] == "Test"
+        assert (
+            response.data["updateTemplate"]["template"]["categories"][0][
+                "name"
+            ]
+            == "Test"
+        )
 
     def test_delete_template(self):
-        query = (
-            """
+        query = """
             mutation deleteTemplate($id: String!) {
                 deleteTemplate(id: $id) {
                     verificationMessage
                 }
             }
             """
-        )
         variables = {"id": str(self.template.id)}
         response = self.client.execute(query, variables)
         assert (
@@ -229,16 +225,14 @@ class TemplateTestCase(JSONWebTokenTestCase):
         )
 
     def test_activate_template(self):
-        query = (
-            """
+        query = """
             mutation activateTemplate($id: String!) {
                 activateTemplate(id: $id) {
                     verificationMessage
                 }
             }
             """
-        )
-        variables={"id": str(self.template.id)}
+        variables = {"id": str(self.template.id)}
         response = self.client.execute(query, variables)
         assert (
             response.data["activateTemplate"]["verificationMessage"]
@@ -246,16 +240,14 @@ class TemplateTestCase(JSONWebTokenTestCase):
         )
 
     def test_make_template_public(self):
-        query = (
-            """
+        query = """
             mutation makeTemplatePublic($id: String!) {
                 makeTemplatePublic(id: $id) {
                     verificationMessage
                 }
             }
             """
-        )
-        variables={"id": str(self.template.id)}
+        variables = {"id": str(self.template.id)}
         response = self.client.execute(query, variables)
         assert (
             response.data["makeTemplatePublic"]["verificationMessage"]
@@ -263,16 +255,14 @@ class TemplateTestCase(JSONWebTokenTestCase):
         )
 
     def test_approve_public_template(self):
-        query = (
-            """
+        query = """
             mutation approvePublicTemplate($id: String!) {
                 approvePublicTemplate(id: $id) {
                     verificationMessage
                 }
             }
             """
-        )
-        variables={"id": str(self.template.id)}
+        variables = {"id": str(self.template.id)}
         response = self.client.execute(query, variables)
         assert (
             response.data["approvePublicTemplate"]["verificationMessage"]
@@ -280,8 +270,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
         )
 
     def test_create_template_category(self):
-        query = (
-            """
+        query = """
             mutation createTemplateCategory(
                 $name: String!, $company: String!) {
                 createTemplateCategory(name: $name, company: $company) {
@@ -291,14 +280,14 @@ class TemplateTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        )
-        variables={"name": "Test", "company": str(self.company.id)}
+        variables = {"name": "Test", "company": str(self.company.id)}
         response = self.client.execute(query, variables)
-        assert response.data["createTemplateCategory"]["templateCategory"]["id"]
+        assert response.data["createTemplateCategory"]["templateCategory"][
+            "id"
+        ]
 
     def test_update_template_category(self):
-        query = (
-            """
+        query = """
             mutation updateTemplateCategory(
                 $id: String!,
                 $name: String!,
@@ -313,39 +302,46 @@ class TemplateTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        )
         variables = {
             "id": str(self.template_category.id),
             "name": "Test",
             "company": str(self.company.id),
         }
         response = self.client.execute(query, variables)
-        assert response.data["updateTemplateCategory"]["templateCategory"]["id"]
+        assert response.data["updateTemplateCategory"]["templateCategory"][
+            "id"
+        ]
 
     def test_delete_template_category(self):
-        query = (
-            """
+        query = """
             mutation deleteTemplateCategory($id: String!) {
                 deleteTemplateCategory(id: $id) {
                     verificationMessage
                 }
             }
             """
-        )
-        variables={"id": str(self.template_category.id)}
+        variables = {"id": str(self.template_category.id)}
         response = self.client.execute(query, variables)
-        assert response.data["deleteTemplateCategory"]["verificationMessage"] == "Template category deleted successfully."
-    
+        assert (
+            response.data["deleteTemplateCategory"]["verificationMessage"]
+            == "Template category deleted successfully."
+        )
+
     def test_batch_delete_template(self):
-        query = (
-            """
+        query = """
             mutation batchDeleteTemplate($objects: [String!]!) {
                 batchDeleteTemplate(objects: $objects) {
                     verificationMessage
                 }
             }
             """
-        )
-        variables={"objects": [str(self.template.id),]}
+        variables = {
+            "objects": [
+                str(self.template.id),
+            ]
+        }
         response = self.client.execute(query, variables)
-        assert response.data["batchDeleteTemplate"]["verificationMessage"] == "Templates in batch deleted."
+        assert (
+            response.data["batchDeleteTemplate"]["verificationMessage"]
+            == "Templates in batch deleted."
+        )

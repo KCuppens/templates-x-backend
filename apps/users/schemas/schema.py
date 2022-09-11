@@ -3,8 +3,8 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.models import Group, Permission
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
-from graphql_jwt.utils import jwt_encode, jwt_payload
 from graphql_jwt.decorators import login_required
+from graphql_jwt.utils import jwt_encode, jwt_payload
 
 from apps.company.models import Company
 from apps.mail.tasks import send_email
@@ -33,8 +33,7 @@ class PermissionType(DjangoObjectType):
 
 class Query(graphene.ObjectType):
     get_invited_users = graphene.List(
-        UserType,
-        id=graphene.String(required=True)
+        UserType, id=graphene.String(required=True)
     )
     get_user_detail = graphene.Field(UserType, id=graphene.String())
     get_company_permission_groups = graphene.List(
@@ -44,8 +43,7 @@ class Query(graphene.ObjectType):
         PermissionType, id=graphene.String(required=True)
     )
     get_group_users = graphene.List(
-        UserType,
-        id=graphene.String(required=True)
+        UserType, id=graphene.String(required=True)
     )
 
     @login_required
@@ -106,8 +104,7 @@ class RegisterUser(graphene.Mutation):
             {"{activation_link}": activation_link},
         )
         return RegisterUser(
-            user=user,
-            verification_message=verification_message
+            user=user, verification_message=verification_message
         )
 
 
@@ -130,8 +127,7 @@ class ActivateUser(graphene.Mutation):
         else:
             verification_message = "The user is already activated."
         return ActivateUser(
-            user=user,
-            verification_message=verification_message
+            user=user, verification_message=verification_message
         )
 
 
@@ -160,7 +156,7 @@ class LoginUser(graphene.Mutation):
             return LoginUser(
                 user=user,
                 token=token,
-                verification_message=verification_message
+                verification_message=verification_message,
             )
         else:
             user_exists = User.objects.get(email=email)
@@ -181,7 +177,7 @@ class LogoutUser(graphene.Mutation):
         logout(info.context)
         return LogoutUser(
             is_logged_out=True,
-            verification_message="User successfully logged out!"
+            verification_message="User successfully logged out!",
         )
 
 
@@ -198,9 +194,7 @@ class ResetPassword(graphene.Mutation):
 
         user = User.objects.filter(email=email).first()
         if user is None:
-            raise GraphQLError(
-                "User with the provided email was not found."
-            )
+            raise GraphQLError("User with the provided email was not found.")
 
         password_reset_link = user.get_password_reset_link()
 
@@ -213,8 +207,9 @@ class ResetPassword(graphene.Mutation):
         )
         return ResetPassword(
             reset_link=password_reset_link,
-            verification_message="A password reset link was"
-            " sent to your email address.",
+            verification_message=(
+                "A password reset link was sent to your email address."
+            ),
         )
 
 
@@ -264,7 +259,8 @@ class CreateGroup(graphene.Mutation):
             group.permissions.add(int(id_))
 
         return CreateGroup(
-            group=group, verification_message="Group is created successfully"
+            group=group,
+            verification_message="Group is created successfully",
         )
 
 
@@ -291,7 +287,8 @@ class UpdateGroup(graphene.Mutation):
             group.permissions.add(int(id_))
 
         return UpdateGroup(
-            group=group, verification_message="Group is updated successfully"
+            group=group,
+            verification_message="Group is updated successfully",
         )
 
 
@@ -348,10 +345,7 @@ class DeleteUserFromGroup(graphene.Mutation):
         user = User.objects.filter(id=user_id).first()
         if not user:
             raise GraphQLError(
-                str(
-                    info.context,
-                    "No user found by the id provided"
-                )
+                str(info.context, "No user found by the id provided")
             )
 
         group = Group.objects.filter(id=group_id).first()
@@ -387,7 +381,9 @@ class ChangePassword(graphene.Mutation):
             user.save()
             return ChangePassword(
                 user=user,
-                verification_message="Password has been changed successfully!",
+                verification_message=(
+                    "Password has been changed successfully!"
+                ),
             )
         raise GraphQLError("User is not logged in, please login to proceed!")
 
@@ -411,8 +407,9 @@ class SetCompanyActiveForUser(graphene.Mutation):
             user.save(update_fields=["active_company"])
             return SetCompanyActiveForUser(
                 user=user,
-                verification_message="Set the company as"
-                " active for this user.",
+                verification_message=(
+                    "Set the company as active for this user."
+                ),
             )
         raise GraphQLError("User or company not found!")
 

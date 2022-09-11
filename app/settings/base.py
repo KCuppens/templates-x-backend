@@ -20,10 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # AWS Boto3
 # ------------------------------------------------------------------------------
-AWS_SECRET_KEY = config('AWS_SECRET_KEY', '')
-AWS_ACCESS_KEY = config('AWS_ACCESS_KEY', '')
-AWS_REGION = config('AWS_REGION', '')
-AWS_IMAGE_BUCKET = config('AWS_IMAGE_BUCKET', '')
+AWS_SECRET_KEY = config("AWS_SECRET_KEY", "")
+AWS_ACCESS_KEY = config("AWS_ACCESS_KEY", "")
+AWS_REGION = config("AWS_REGION", "")
+AWS_IMAGE_BUCKET = config("AWS_IMAGE_BUCKET", "")
 
 
 # GENERAL
@@ -140,20 +140,25 @@ AUTH_USER_MODEL = "users.User"
 # https://docs.djangoproject.com/en/3.2/ref/settings/#auth-password-validators
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "MinimumLengthValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "CommonPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.CommonPasswordValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation."
-        "NumericPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.NumericPasswordValidator"
+        ),
     },
 ]
 
@@ -200,12 +205,14 @@ AUTHENTICATION_BACKENDS = [
 SITE_ID = 1
 
 GRAPHENE_DJANGO_EXTRAS = {
-    'DEFAULT_PAGINATION_CLASS': 'graphene_django_extras.paginations.LimitOffsetGraphqlPagination',
-    'DEFAULT_PAGE_SIZE': 6,
-    'MAX_PAGE_SIZE': 18,
-    'CACHE_ACTIVE': True,
-    'CACHE_TIMEOUT': 300    # seconds
-} 
+    "DEFAULT_PAGINATION_CLASS": (
+        "graphene_django_extras.paginations.LimitOffsetGraphqlPagination"
+    ),
+    "DEFAULT_PAGE_SIZE": 6,
+    "MAX_PAGE_SIZE": 18,
+    "CACHE_ACTIVE": True,
+    "CACHE_TIMEOUT": 300,  # seconds
+}
 
 # CELERY
 CELERY_BROKER_URL = "redis://localhost:6379"
@@ -224,4 +231,3 @@ CACHES = {
         "KEY_PREFIX": "hybrid_x_",
     }
 }
-

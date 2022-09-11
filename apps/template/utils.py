@@ -13,12 +13,16 @@ def convert_html_to_png(template):
 
 
 def convert_html_to_pdf(template):
-    return pdfkit.from_file(template.content_html, f"template-{template.id}.pdf")
+    return pdfkit.from_file(
+        template.content_html, f"template-{template.id}.pdf"
+    )
 
 
 def convert_html_to_docx(template):
     parser = HtmlToDocx()
-    return parser.parse_html_file(template.content_html, f"template-{template.id}.docx")
+    return parser.parse_html_file(
+        template.content_html, f"template-{template.id}.docx"
+    )
 
 
 def convert_html_to_jpeg(template):
