@@ -19,6 +19,7 @@ class UserTestCase(JSONWebTokenTestCase):
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
         return get_user_model().objects.create_user(
+            email="test@templatesx.io",
             username="test",
             password="dolphins",
             is_staff=True
@@ -78,25 +79,10 @@ class UserTestCase(JSONWebTokenTestCase):
         response = self.client.execute(query, variables)
         assert response.data["getPermissionsForCompany"] == []
 
-    def test_logout_user(self):
-        query = (
-            """
-            mutation logoutUser{
-                logoutUser{
-                    isLoggedOut
-                }
-            }
-            """
-        )
-        response = self.client.execute(query)
-        print(response)
-        assert response.data["logoutUser"]["isLoggedOut"]
-        assert (
-            response.data["logoutUser"]["verificationMessage"]
-            == "User successfully logged out!"
-        )
-
-    def test_reset_password(self):
+    @mock.patch(
+        "apps.users.schemas.schema.send_email.delay"
+    )
+    def test_reset_password(self, send_email):
         query = (
             """
             mutation resetPassword($email: String!) {
@@ -106,9 +92,9 @@ class UserTestCase(JSONWebTokenTestCase):
             }
             """
         )
-        variables={"email": "test@templatesx.io"}
+        variables = {"email": "test@templatesx.io"}
         response = self.client.execute(query, variables)
-        print(response)
+        send_email.assert_called_once()
         assert (
             response.data["resetPassword"]["verificationMessage"]
             == "A password reset link was sent to your email address."
@@ -130,7 +116,6 @@ class UserTestCase(JSONWebTokenTestCase):
         )
         variables={"uidb64": uid, "token": token, "password": "test12345"}
         response = self.client.execute(query, variables)
-        print(response)
         assert (
             response.data
             ["resetPasswordConfirm"]["verificationMessage"]
@@ -141,21 +126,19 @@ class UserTestCase(JSONWebTokenTestCase):
         query = (
             """
             mutation createGroup(
-                $company: String!, $name: String!, $permission: List) {
+                $company: String!, $name: String!) {
                 createGroup(
-                    company: $company, name: $name, permission: $permission) {
+                    company: $company, name: $name) {
                     verificationMessage
                 }
             }
             """
         )
-        variables={
+        variables = {
             "company": self.company.id,
             "name": "Perm group",
-            "permission": [1, 2],
         }
         response = self.client.execute(query, variables)
-        print(response)
         assert (
             response.data["createGroup"]["verificationMessage"]
             == "Group is created successfully"
@@ -165,8 +148,8 @@ class UserTestCase(JSONWebTokenTestCase):
         query = (
             """
             mutation updateGroup(
-                $id: String!, $name: String!, $permission: List) {
-                updateGroup(id: $id, name: $name, permission: $permission) {
+                $id: String!, $name: String!) {
+                updateGroup(id: $id, name: $name) {
                     verificationMessage
                 }
             }
@@ -175,10 +158,8 @@ class UserTestCase(JSONWebTokenTestCase):
         variables={
             "id": self.group.id,
             "name": "Perm group",
-            "permission": [1, 2]
         }
         response = self.client.execute(query, variables)
-        print(response)
         assert (
             response.data["updateGroup"]["verificationMessage"]
             == "Group is updated successfully"
@@ -194,9 +175,8 @@ class UserTestCase(JSONWebTokenTestCase):
             }
             """
         )
-        variables={"id": self.group.id}
+        variables = {"id": self.group.id}
         response = self.client.execute(query, variables)
-        print(response)
         assert (
             response.data
             ["deleteGroup"]["verificationMessage"]
@@ -207,16 +187,18 @@ class UserTestCase(JSONWebTokenTestCase):
         query = (
             """
             mutation addUserToGroup(
-                $user_id: String!, group_id: String!) {
-                addUserToGroup(user_id: $user_id, group_id: $group_id) {
+                $user_id: String!, $group_id: String!) {
+                addUserToGroup(userId: $user_id, groupId: $group_id) {
                     verificationMessage
                 }
             }
             """
         )
-        variables={"id": self.group.id}
+        variables = {
+            "group_id": self.group.id,
+            "user_id": self.administrator.id
+        }
         response = self.client.execute(query, variables)
-        print(response)
         assert (
             response.data
             ["addUserToGroup"]["verificationMessage"]
@@ -227,16 +209,18 @@ class UserTestCase(JSONWebTokenTestCase):
         query = (
             """
             mutation deleteUserFromGroup(
-                $user_id: String!, group_id: String!) {
-                deleteUserFromGroup(user_id: $user_id, group_id: $group_id) {
+                $user_id: String!, $group_id: String!) {
+                deleteUserFromGroup(userId: $user_id, groupId: $group_id) {
                     verificationMessage
                 }
             }
             """
         )
-        variables={"id": self.group.id}
+        variables = {
+            "group_id": self.group.id,
+            "user_id": self.administrator.id
+        }
         response = self.client.execute(query, variables)
-        print(response)
         assert (
             response.data
             ["deleteUserFromGroup"]["verificationMessage"]
@@ -271,7 +255,7 @@ class UserAuthTestCase(GraphQLTestCase):
         "apps.users.schemas.schema.send_email.delay"
     )
     def test_register_user(self, send_email):
-        query = (
+        response = self.query(
             """
             mutation registerUser(
                 $first_name: String!,
@@ -289,19 +273,18 @@ class UserAuthTestCase(GraphQLTestCase):
                     verificationMessage
                 }
             }
-            """
+            """,
+            variables={
+                "first_name": "Test",
+                "last_name": "Test",
+                "email": "test@templatesx.io",
+                "password": "test123",
+            }
         )
-        variables = {
-            "first_name": "Test",
-            "last_name": "Test",
-            "email": "test@templatesx.io",
-            "password": "test123",
-        }
-        response = self.client.execute(query, variables)
         send_email.assert_called_once()
-        assert response.data["registerUser"]["user"]["id"]
+        assert response.json()["data"]["registerUser"]["user"]["id"]
         assert (
-            response.data["registerUser"]
+            response.json()["data"]["registerUser"]
             ["verificationMessage"]
             == "Successfully created user, Test Test"
         )
@@ -309,19 +292,18 @@ class UserAuthTestCase(GraphQLTestCase):
     def test_activate_user(self):
         token = account_activation_token.make_token(self.administrator)
         uid = urlsafe_base64_encode(force_bytes(self.administrator.pk))
-        query = (
+        response = self.query(
             """
             mutation activateUser($uid: String!, $token: String!) {
                 activateUser(uid: $uid, token: $token) {
                     verificationMessage
                 }
             }
-            """
+            """,
+            variables={"token": token, "uid": uid}
         )
-        variables = {"token": token, "uid": uid}
-        response = self.client.execute(query, variables)
         assert (
-            response.data["activateUser"]["verificationMessage"]
+            response.json()["data"]["activateUser"]["verificationMessage"]
             == "The user has been activated."
         )
 
@@ -329,19 +311,17 @@ class UserAuthTestCase(GraphQLTestCase):
         self.client.logout()
         self.administrator.is_active = True
         self.administrator.save(update_fields=["is_active"])
-        query = (
+        response = self.query(
             """
             mutation loginUser($email: String!, $password: String!) {
                 loginUser(email: $email, password: $password) {
                     verificationMessage
                 }
             }
-            """
+            """,
+            variables={"email": "test", "password": "dolphins"}
         )
-        variables={"email": "test", "password": "dolphins"}
-        response = self.client.execute(query, variables)
-        print(response)
         assert (
-            response.data["loginUser"]["verificationMessage"]
+            response.json()["data"]["loginUser"]["verificationMessage"]
             == "You logged in successfully."
         )

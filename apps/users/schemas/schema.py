@@ -152,7 +152,6 @@ class LoginUser(graphene.Mutation):
             raise GraphQLError("The user is already logged in.")
 
         user = authenticate(username=email, password=password)
-        print(user)
         if user:
             login(info.context, user)
             payload = jwt_payload(user)
@@ -179,8 +178,6 @@ class LogoutUser(graphene.Mutation):
 
     @login_required
     def mutate(self, info, **kwargs):
-        if not info.context.user.is_authenticated:
-            raise GraphQLError("No user is logged in")
         logout(info.context)
         return LogoutUser(
             is_logged_out=True,
@@ -197,12 +194,12 @@ class ResetPassword(graphene.Mutation):
 
     def mutate(self, info, email):
         if email.strip() == "":
-            raise GraphQLError(info.context, "Email can't be blank.")
+            raise GraphQLError("Email can't be blank.")
 
         user = User.objects.filter(email=email).first()
         if user is None:
             raise GraphQLError(
-                info.context, "User with the provided email was not found."
+                "User with the provided email was not found."
             )
 
         password_reset_link = user.get_password_reset_link()
@@ -261,8 +258,6 @@ class CreateGroup(graphene.Mutation):
         permissions = kwargs.get("permission", [])
 
         group = Group.objects.create(name=name, company_id=company)
-        group.edited_by = info.context.user
-        group.save(update_fields=["edited_by"])
 
         permissions = Permission.objects.filter(pk__in=permissions)
         for id_ in list(permissions.values_list("id", flat=True)):
@@ -278,7 +273,7 @@ class UpdateGroup(graphene.Mutation):
     verification_message = graphene.String()
 
     class Arguments:
-        id = graphene.Int(required=True)
+        id = graphene.String(required=True)
         name = graphene.String(required=True)
         permission = graphene.List(graphene.String)
 
@@ -290,8 +285,6 @@ class UpdateGroup(graphene.Mutation):
 
         group = Group.objects.get(id=id)
         group.name = name
-        group.edited_by = info.context.user
-        group.save(update_fields=["edited_by", "name"])
 
         permissions = Permission.objects.filter(pk__in=permissions)
         for id_ in list(permissions.values_list("id", flat=True)):
@@ -306,7 +299,7 @@ class DeleteGroup(graphene.Mutation):
     verification_message = graphene.String()
 
     class Arguments:
-        id = graphene.Int(required=True)
+        id = graphene.String(required=True)
 
     @login_required
     def mutate(self, info, id):
@@ -322,7 +315,7 @@ class AddUserToGroup(graphene.Mutation):
 
     class Arguments:
         user_id = graphene.String(required=True)
-        group_id = graphene.Int(required=True)
+        group_id = graphene.String(required=True)
 
     @login_required
     def mutate(self, info, user_id, group_id):
@@ -342,7 +335,7 @@ class DeleteUserFromGroup(graphene.Mutation):
     verification_message = graphene.String()
 
     class Arguments:
-        group_id = graphene.Int(required=True)
+        group_id = graphene.String(required=True)
         user_id = graphene.String(required=True)
 
     @login_required
@@ -368,7 +361,6 @@ class DeleteUserFromGroup(graphene.Mutation):
         group.user_set.remove(user)
         return DeleteUserFromGroup(
             group=group,
-            is_deleted=True,
             verification_message="The user has been removed from the group!",
         )
 
