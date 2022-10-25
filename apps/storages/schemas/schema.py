@@ -6,12 +6,10 @@ from django.core.files.storage import default_storage
 from google.cloud import storage as google_storage
 from graphene_django import DjangoObjectType
 from graphene_file_upload.scalars import Upload
+from graphql_jwt.decorators import login_required, permission_required
 
 from apps.company.models import Company
-from apps.s3.file_handling import (
-    init_external_session,
-    upload_file_external,
-)
+from apps.s3.file_handling import init_external_session, upload_file_external
 from apps.storages.models import Storage
 
 
@@ -26,6 +24,8 @@ class Query(graphene.ObjectType):
         StorageType, id=graphene.String(required=True)
     )
 
+    @login_required
+    @permission_required("storages.view_storage")
     def resolve_get_company_storages(self, info, id, **kwargs):
         return Storage.objects.filter(company_id=id)
 
@@ -50,6 +50,8 @@ class CreateStorage(graphene.Mutation):
         bucket_name = graphene.String()
         region = graphene.String()
 
+    @login_required
+    @permission_required("storages.add_storage")
     def mutate(self, info, **kwargs):
         storage_type = kwargs.get("storage_type")
         company = kwargs.get("company")
@@ -116,6 +118,8 @@ class UpdateStorage(graphene.Mutation):
         bucket_name = graphene.String()
         region = graphene.String()
 
+    @login_required
+    @permission_required("storages.change_storage")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         storage_type = kwargs.get("storage_type")
@@ -186,6 +190,8 @@ class SelectStorage(graphene.Mutation):
     class Arguments:
         id = graphene.String(required=True)
 
+    @login_required
+    @permission_required("storages.change_storage")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         storage = Storage.objects.filter(id=id).first()
@@ -211,6 +217,8 @@ class DeleteStorage(graphene.Mutation):
     class Arguments:
         id = graphene.String(required=True)
 
+    @login_required
+    @permission_required("storages.delete_storage")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         storage = Storage.objects.filter(id=id).first()
@@ -231,6 +239,8 @@ class UploadFile(graphene.Mutation):
         id = graphene.String(required=True)
         file = Upload(required=True)
 
+    @login_required
+    @permission_required("storages.change_storage")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         company = Company.objects.filter(id=id).first()

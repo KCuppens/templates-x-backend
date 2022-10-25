@@ -4,7 +4,7 @@ from graphene_django_filter import (
     AdvancedDjangoFilterConnectionField,
     AdvancedFilterSet,
 )
-from graphql_jwt.decorators import login_required, staff_member_required
+from graphql_jwt.decorators import login_required, staff_member_required, permission_required
 
 from apps.template.models import Template, TemplateCategory
 from apps.template.utils import (
@@ -57,16 +57,19 @@ class Query(graphene.ObjectType):
     get_filter_templates = AdvancedDjangoFilterConnectionField(TemplateType)
 
     @login_required
+    @permission_required("template.view_template")
     def resolve_get_template_by_id(self, info, id):
         return Template.objects.filter(id=id).first()
 
     @login_required
+    @permission_required("template.view_template")
     def resolve_get_templates_by_administrator_id(self, info):
         return Template.objects.filter(
             company__administrator_id=info.context.user.id
         )
 
     @login_required
+    @permission_required("template.view_template")
     def resolve_get_templates(self, info):
         return Template.objects.all().order_by("-id")
 
@@ -76,10 +79,12 @@ class Query(graphene.ObjectType):
         ).order_by("-id")
 
     @login_required
+    @permission_required("template.view_templatecategory")
     def resolve_get_template_category_id(self, info, id):
         return TemplateCategory.objects.filter(id=id).first()
 
     @login_required
+    @permission_required("template.view_templatecategory")
     def resolve_get_template_categories(self, info, id):
         return TemplateCategory.objects.filter(company_id=id)
 
@@ -98,6 +103,7 @@ class CreateTemplate(graphene.Mutation):
         categories = graphene.List(graphene.String)
 
     @login_required
+    @permission_required("template.add_template")
     def mutate(self, info, *args, **kwargs):
         company = kwargs.get("company")
         name = kwargs.get("name")
@@ -135,6 +141,7 @@ class CopyTemplate(graphene.Mutation):
         template = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.add_template")
     def mutate(self, info, *args, **kwargs):
         template_id = kwargs.get("template")
         template = Template.objects.filter(id=template_id).first()
@@ -157,6 +164,7 @@ class UpdateHTMLinTemplate(graphene.Mutation):
         html = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.change_template")
     def mutate(self, info, *arg, **kwargs):
         id = kwargs.get("id")
         html = kwargs.get("html")
@@ -194,6 +202,7 @@ class UpdateTemplate(graphene.Mutation):
         categories = graphene.List(graphene.String)
 
     @login_required
+    @permission_required("template.change_template")
     def mutate(self, info, *arg, **kwargs):
         id = kwargs.get("id")
         company = kwargs.get("company")
@@ -245,6 +254,7 @@ class DeleteTemplate(graphene.Mutation):
         id = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.delete_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         if template:
@@ -263,6 +273,7 @@ class BatchDeleteTemplate(graphene.Mutation):
         objects = graphene.List(graphene.String, required=True)
 
     @login_required
+    @permission_required("template.delete_template")
     def mutate(self, info, **kwargs):
         objects = kwargs.get("objects", [])
         Template.objects.filter(id__in=objects).delete()
@@ -278,6 +289,7 @@ class ActivateTemplate(graphene.Mutation):
         id = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.change_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         if template:
@@ -299,6 +311,7 @@ class MakeTemplatePublic(graphene.Mutation):
         id = graphene.String(required=True)
 
     @staff_member_required
+    @permission_required("template.change_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         if template:
@@ -320,6 +333,7 @@ class ApprovePublicTemplate(graphene.Mutation):
         id = graphene.String(required=True)
 
     @staff_member_required
+    @permission_required("template.change_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         if template:
@@ -343,6 +357,7 @@ class CreateTemplateCategory(graphene.Mutation):
         company = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.add_templatecategory")
     def mutate(self, info, **kwargs):
         name = kwargs.get("name")
         company = kwargs.get("company")
@@ -366,6 +381,7 @@ class UpdateTemplateCategory(graphene.Mutation):
         company = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.change_templatecategory")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         name = kwargs.get("name")
@@ -396,6 +412,7 @@ class DeleteTemplateCategory(graphene.Mutation):
         id = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.delete_templatecategory")
     def mutate(self, info, id):
         template_category = TemplateCategory.objects.filter(id=id).first()
         if template_category:
@@ -418,6 +435,7 @@ class ExportTemplate(graphene.Mutation):
         type = graphene.String(required=True)
 
     @login_required
+    @permission_required("template.view_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         if template:

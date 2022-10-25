@@ -1,31 +1,16 @@
 import graphene
 from django.contrib.auth import get_user_model
 from graphene_django import DjangoObjectType
-from graphene_django_filter import (
-    AdvancedDjangoFilterConnectionField,
-    AdvancedFilterSet,
-)
-from graphql_jwt.decorators import login_required
+from graphql_jwt.decorators import login_required, permission_required
 
 from apps.company.models import Company
 from apps.mail.tasks import send_email
-
-
-class CompanyFilter(AdvancedFilterSet):
-    class Meta:
-        model = Company
-        fields = {
-            "id": ("exact",),
-            "name": ("exact", "contains"),
-        }
 
 
 class CompanyType(DjangoObjectType):
     class Meta:
         model = Company
         fields = "__all__"
-        interfaces = (graphene.relay.Node,)
-        filterset_class = CompanyFilter
 
 
 class Query(graphene.ObjectType):
@@ -38,19 +23,31 @@ class Query(graphene.ObjectType):
     get_companies_by_user_id = graphene.List(
         CompanyType, id=graphene.String(required=True)
     )
-    get_company_filtered = AdvancedDjangoFilterConnectionField(CompanyType)
+    get_company_filtered = graphene.List(CompanyType, name=graphene.String())
 
     @login_required
+    @permission_required("company.view_company")
     def resolve_get_company_by_id(self, info, id):
         return Company.objects.filter(id=id).first()
 
     @login_required
+    @permission_required("company.view_company")
     def resolve_get_companies_by_administrator_id(self, info, id):
         return Company.objects.filter(administrator_id=id).order_by("-id")
 
     @login_required
+    @permission_required("company.view_company")
     def resolve_get_companies_by_user_id(self, info, id):
         return Company.objects.filter(invited_users__id=id).order_by("-id")
+
+    @login_required
+    @permission_required("company.view_company")
+    def resolve_get_company_filtered(self, info, name=None):
+        if name:
+            return Company.objects.filter(name__icontains=name).order_by(
+                "-id"
+            )
+        return Company.objects.all().order_by("-id")
 
 
 class CreateCompany(graphene.Mutation):
@@ -61,7 +58,6 @@ class CreateCompany(graphene.Mutation):
         name = graphene.String(required=True)
         site = graphene.String()
 
-    @login_required
     def mutate(self, info, *args, **kwargs):
         name = kwargs.get("name")
         site = kwargs.get("site", "")
@@ -84,6 +80,7 @@ class UpdateCompany(graphene.Mutation):
         name = graphene.String(required=True)
         site = graphene.String()
 
+    @permission_required("company.change_company")
     @login_required
     def mutate(self, info, *args, **kwargs):
         id = kwargs.get("id")
@@ -111,6 +108,7 @@ class DeleteCompany(graphene.Mutation):
     class Arguments:
         id = graphene.String(required=True)
 
+    @permission_required("company.delete_company")
     @login_required
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
@@ -134,6 +132,7 @@ class InviteUser(graphene.Mutation):
         last_name = graphene.String()
         permissions = graphene.List(graphene.String)
 
+    @permission_required("company.change_company")
     @login_required
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
@@ -165,9 +164,7 @@ class InviteUser(graphene.Mutation):
                 # TODO create new_user_invite_email
                 # Add permissions to user
                 user.user_permissions.add(*permissions)
-                send_email.delay(
-                    "new_user_invite_email", user_exists, user_exists.email
-                )
+                send_email.delay("new_user_invite_email", user, user.email)
                 company.invited_users.add(user)
             verification_message = (
                 f"User with {email} has been invited to {company.name}."

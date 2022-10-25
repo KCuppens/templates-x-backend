@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.models import Group, Permission
 from graphene_django import DjangoObjectType
 from graphql import GraphQLError
-from graphql_jwt.decorators import login_required
+from graphql_jwt.decorators import login_required, permission_required
 from graphql_jwt.utils import jwt_encode, jwt_payload
 
 from apps.company.models import Company
@@ -47,6 +47,7 @@ class Query(graphene.ObjectType):
     )
 
     @login_required
+    @permission_required("users.view_user")
     def resolve_get_invited_users(self, info, id):
         company = Company.objects.filter(id=id).first()
         if company:
@@ -54,18 +55,22 @@ class Query(graphene.ObjectType):
         return []
 
     @login_required
+    @permission_required("users.view_user")
     def resolve_get_user_detail(self, info, id):
         return User.objects.filter(id=id).first()
 
     @login_required
+    @permission_required("users.view_group")
     def resolve_get_company_permission_groups(self, info, id):
         return Group.objects.filter(company_id=id)
 
     @login_required
+    @permission_required("users.view_permission")
     def resolve_get_permissions_for_company(self, info, id):
         return Permission.objects.filter(company__id=id)
 
     @login_required
+    @permission_required("users.view_user")
     def resolve_get_group_users(self, info, id):
         return User.objects.filter(groups__id=id)
 
@@ -247,6 +252,7 @@ class CreateGroup(graphene.Mutation):
         permission = graphene.List(graphene.String)
 
     @login_required
+    @permission_required("groups.add_group")
     def mutate(self, info, **kwargs):
         name = kwargs.get("name")
         company = kwargs.get("company")
@@ -274,6 +280,7 @@ class UpdateGroup(graphene.Mutation):
         permission = graphene.List(graphene.String)
 
     @login_required
+    @permission_required("groups.change_group")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         name = kwargs.get("name")
@@ -299,6 +306,7 @@ class DeleteGroup(graphene.Mutation):
         id = graphene.String(required=True)
 
     @login_required
+    @permission_required("groups.delete_group")
     def mutate(self, info, id):
         group = Group.objects.get(id=id)
         group.delete()
@@ -315,6 +323,7 @@ class AddUserToGroup(graphene.Mutation):
         group_id = graphene.String(required=True)
 
     @login_required
+    @permission_required("groups.add_user")
     def mutate(self, info, user_id, group_id):
         user = User.objects.filter(id=user_id).first()
         group = Group.objects.filter(id=group_id).first()
@@ -336,6 +345,7 @@ class DeleteUserFromGroup(graphene.Mutation):
         user_id = graphene.String(required=True)
 
     @login_required
+    @permission_required("groups.delete_user")
     def mutate(self, info, group_id, user_id, **kwargs):
         if not group_id or not user_id:
             raise GraphQLError(
@@ -368,6 +378,7 @@ class ChangePassword(graphene.Mutation):
         confirm_password = graphene.String(required=True)
 
     @login_required
+    @permission_required("users.change_user")
     def mutate(self, info, **kwargs):
         password = kwargs.get("password")
         confirm_password = kwargs.get("confirm_password")
@@ -397,6 +408,7 @@ class SetCompanyActiveForUser(graphene.Mutation):
         company_id = graphene.String(required=True)
 
     @login_required
+    @permission_required("users.change_user")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         company_id = kwargs.get("company_id")

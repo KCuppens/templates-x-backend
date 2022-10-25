@@ -1,40 +1,28 @@
 import graphene
 from graphene_django import DjangoObjectType
-from graphene_django_filter import (
-    AdvancedDjangoFilterConnectionField,
-    AdvancedFilterSet,
-)
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import staff_member_required
 
 from apps.blog.models import Blog
 
 
-class BlogFilter(AdvancedFilterSet):
-    class Meta:
-        model = Blog
-        fields = {
-            "id": ("exact",),
-            "name": ("exact", "contains"),
-            "description": ("contains",),
-            "keywords": ("contains",),
-        }
-
-
 class BlogType(DjangoObjectType):
     class Meta:
         model = Blog
         fields = "__all__"
-        interfaces = (graphene.relay.Node,)
-        filterset_class = BlogFilter
 
 
 class Query(graphene.ObjectType):
-    get_filter_blogs = AdvancedDjangoFilterConnectionField(BlogType)
+    get_filter_blogs = graphene.List(BlogType, name=graphene.String())
     get_blog_detail = graphene.Field(BlogType, id=graphene.String())
 
     def resolve_get_blog_detail(self, info, id):
         return Blog.objects.filter(id=id).first()
+
+    def resolve_get_filter_blogs(self, info, name=None):
+        if name:
+            return Blog.objects.filter(name__icontains=name).order_by("-id")
+        return Blog.objects.all().order_by("-id")
 
 
 class CreateBlog(graphene.Mutation):

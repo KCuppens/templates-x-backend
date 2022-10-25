@@ -1,31 +1,36 @@
 from unittest import mock
 
 import pytest
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Permission
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
-from apps.company.models import Company
+from apps.company.tests.factories import CompanyFactory
+from apps.users.tests.factories import GroupFactory, UserFactory
 
 
 class CompanyTestCase(JSONWebTokenTestCase):
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
-        return Company.objects.create(name="Test")
+        return CompanyFactory()
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_administrator(self):
-        return get_user_model().objects.create_user(
-            username="test@templatesx.io",
-            email="test@templatesx.io",
-            first_name="test",
-            last_name="test",
-            is_superuser=False,
-            active_company=self.company.id,
+        return UserFactory(active_company=self.company)
+
+    @pytest.mark.django_db(transaction=True, reset_sequences=True)
+    def create_group(self):
+        group = GroupFactory()
+        group.permissions.set(
+            [perm.id for perm in Permission.objects.filter()]
         )
+        self.administrator.groups.add(group)
 
     def setUp(self):
         self.company = self.create_company()
         self.administrator = self.create_administrator()
+        self.company.administrator = self.administrator
+        self.company.save(update_fields=["administrator"])
+        self.group = self.create_group()
         self.client.authenticate(self.administrator)
 
     def test_get_company_by_id(self):
@@ -52,7 +57,7 @@ class CompanyTestCase(JSONWebTokenTestCase):
             """
         variables = {"id": str(self.administrator.id)}
         response = self.client.execute(query, variables)
-        assert response.data["getCompaniesByAdministratorId"] == []
+        assert len(response.data["getCompaniesByAdministratorId"]) > 0
 
     def test_get_company_by_user_id(self):
         query = """
@@ -69,28 +74,19 @@ class CompanyTestCase(JSONWebTokenTestCase):
 
     def test_get_company_filtered(self):
         query = """
-            {
-                getCompanyFiltered(
-                    filter: {
-                        or: [
-                            {name: {contains: "Test"}}
-                        ]
-                    }
-                    ){
-                    edges {
-                        node {
-                            id
-                            name
-                        }
-                    }
+            query getCompanyFiltered($name: String){
+                getCompanyFiltered(name: $name){
+                    name,
+                    id
                 }
             }
             """
         response = self.client.execute(query)
+        print(response)
         assert len(response.data) == 1
         assert (
-            response.data["getCompanyFiltered"]["edges"][0]["node"]["name"]
-            == "Test"
+            response.data["getCompanyFiltered"][0]["name"]
+            == self.company.name
         )
 
     def test_create_company(self):
@@ -155,5 +151,7 @@ class CompanyTestCase(JSONWebTokenTestCase):
         send_email.assert_called_once()
         assert (
             response.data["inviteUser"]["verificationMessage"]
-            == "User with test@templatesx.io has been invited to Test."
+            ==
+            "User with test@templatesx.io has been"
+            f"invited to {self.company.name}."
         )
