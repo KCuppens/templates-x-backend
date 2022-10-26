@@ -4,18 +4,19 @@ from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from graphene_file_upload.django.testing import GraphQLFileUploadTestCase
 from graphql_jwt.testcases import JSONWebTokenTestCase
-
+from django.contrib.auth.models import Group
 from apps.company.models import Company
+from apps.company.tests.factories import CompanyFactory
 from apps.storages.models import Storage
+from apps.users.tests.factories import UserFactory
 
 
 class StorageTestCase(JSONWebTokenTestCase):
+    fixtures = ["Group.json"]
+
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
-        return Company.objects.create(
-            administrator=self.user,
-            name="Test",
-        )
+        return CompanyFactory()
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_storage(self):
@@ -29,12 +30,19 @@ class StorageTestCase(JSONWebTokenTestCase):
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
-        return get_user_model().objects.create_user(
-            username="test", password="dolphins", is_staff=True
+        return UserFactory(
+            is_staff=True
         )
+
+    @pytest.mark.django_db(transaction=True, reset_sequences=True)
+    def create_group(self):
+        return Group.objects.filter(name="Admin").first()
 
     def setUp(self):
         self.user = self.create_user()
+        self.group = self.create_group()
+        print(self.group)
+        self.user.groups.add(self.group)
         self.company = self.create_company()
         self.storage = self.create_storage()
         self.client.authenticate(self.user)
@@ -161,6 +169,8 @@ class StorageTestCase(JSONWebTokenTestCase):
 
 
 class UploadFileTestCase(GraphQLFileUploadTestCase):
+    fixtures = ["Group.json"]
+    
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
         return Company.objects.create(

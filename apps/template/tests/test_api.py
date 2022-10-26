@@ -2,37 +2,44 @@ import pytest
 from django.contrib.auth import get_user_model
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
-from apps.company.models import Company
-from apps.template.models import Template, TemplateCategory
+from apps.company.tests.factories import CompanyFactory
+from django.contrib.auth.models import Group
+from apps.template.tests.factories import TemplateCategoryFactory, TemplateFactory
+from apps.users.tests.factories import UserFactory
 
 
 class TemplateTestCase(JSONWebTokenTestCase):
+    fixtures = ["Group.json"]
+
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
-        return Company.objects.create(name="Test", administrator=self.user)
+        return CompanyFactory()
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_template(self):
-        return Template.objects.create(
-            name="Test",
-            company=self.company,
-        )
+        return TemplateFactory(company=self.company)
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_template_category(self):
-        return TemplateCategory.objects.create(
-            name="Test", company=self.company
-        )
+        return TemplateCategoryFactory(company=self.company)
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
-        return get_user_model().objects.create_user(
-            username="test", password="dolphins", is_staff=True
+        return UserFactory(
+            is_staff=True
         )
+
+    @pytest.mark.django_db(transaction=True, reset_sequences=True)
+    def create_group(self):
+        return Group.objects.filter(name="Admin").first()
 
     def setUp(self):
         self.user = self.create_user()
+        self.group = self.create_group()
+        self.user.groups.add(self.group)
         self.company = self.create_company()
+        self.company.administrator = self.user
+        self.company.save(update_fields=["administrator"])
         self.template = self.create_template()
         self.template_category = self.create_template_category()
         self.client.authenticate(self.user)

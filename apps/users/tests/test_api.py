@@ -7,33 +7,35 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from graphene_django.utils.testing import GraphQLTestCase
 from graphql_jwt.testcases import JSONWebTokenTestCase
-
+from apps.company.tests.factories import CompanyFactory
+from apps.users.tests.factories import GroupFactory, UserFactory
 from apps.company.models import Company
 from apps.users.tokens import account_activation_token
 
 
 class UserTestCase(JSONWebTokenTestCase):
+    fixtures = ["Group.json"]
+
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
-        return Company.objects.create(name="Test")
+        return CompanyFactory()
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
-        return get_user_model().objects.create_user(
-            email="test@templatesx.io",
-            username="test",
-            password="dolphins",
+        return UserFactory(
             is_staff=True,
+            company=self.company
         )
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_group(self):
-        return Group.objects.create(name="testgroup")
+        return Group.objects.filter(name="Admin").first()
 
     def setUp(self):
         self.company = self.create_company()
         self.administrator = self.create_user()
         self.group = self.create_group()
+        self.administrator.groups.add(self.group)
         self.client.authenticate(self.administrator)
 
     def test_get_invited_users(self):
@@ -208,6 +210,8 @@ class UserTestCase(JSONWebTokenTestCase):
 
 
 class UserAuthTestCase(GraphQLTestCase):
+    fixtures = ["Group.json"]
+    
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
         return Company.objects.create(name="Test")

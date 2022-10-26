@@ -4,6 +4,7 @@ from graphene_django import DjangoObjectType
 from graphql_jwt.decorators import login_required, permission_required
 
 from apps.company.models import Company
+from apps.company.permissions import is_company_administrator, is_company_administrator_or_invited_user
 from apps.mail.tasks import send_email
 
 
@@ -28,26 +29,34 @@ class Query(graphene.ObjectType):
     @login_required
     @permission_required("company.view_company")
     def resolve_get_company_by_id(self, info, id):
-        return Company.objects.filter(id=id).first()
+        company = Company.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(info.context.user, company)
+        return company
 
     @login_required
     @permission_required("company.view_company")
     def resolve_get_companies_by_administrator_id(self, info, id):
-        return Company.objects.filter(administrator_id=id).order_by("-id")
+        company = Company.objects.filter(administrator_id=id).order_by("-id")
+        return company
 
     @login_required
     @permission_required("company.view_company")
     def resolve_get_companies_by_user_id(self, info, id):
-        return Company.objects.filter(invited_users__id=id).order_by("-id")
+        company = Company.objects.filter(invited_users__id=id).order_by("-id")
+        return company
 
     @login_required
     @permission_required("company.view_company")
     def resolve_get_company_filtered(self, info, name=None):
         if name:
-            return Company.objects.filter(name__icontains=name).order_by(
+            company = Company.objects.filter(
+                name__icontains=name,
+                is_administrator=info.context.user
+            ).order_by(
                 "-id"
             )
-        return Company.objects.all().order_by("-id")
+        company = Company.objects.all().order_by("-id")
+        return company
 
 
 class CreateCompany(graphene.Mutation):
@@ -89,6 +98,7 @@ class UpdateCompany(graphene.Mutation):
         administrator = info.context.user
 
         company = Company.objects.filter(id=id).first()
+        is_company_administrator(administrator, company)
         if company:
             company.administrator = administrator
             company.name = name
@@ -113,6 +123,7 @@ class DeleteCompany(graphene.Mutation):
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         company = Company.objects.filter(id=id).first()
+        is_company_administrator(info.context.user, company)
         if company:
             company.delete()
             verification_message = "Company has been deleted."
@@ -141,6 +152,7 @@ class InviteUser(graphene.Mutation):
         email = kwargs.get("email")
         permissions = kwargs.get("permissions", [])
         company = Company.objects.filter(id=id).first()
+        is_company_administrator(info.context.user, company)
         if company:
             user_exists = get_user_model().objects.filter(email=email).first()
             if user_exists:

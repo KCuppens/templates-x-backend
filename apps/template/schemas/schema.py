@@ -5,6 +5,8 @@ from graphene_django_filter import (
     AdvancedFilterSet,
 )
 from graphql_jwt.decorators import login_required, staff_member_required, permission_required
+from apps.company.models import Company
+from apps.company.permissions import is_company_administrator, is_company_administrator_or_invited_user
 
 from apps.template.models import Template, TemplateCategory
 from apps.template.utils import (
@@ -59,19 +61,25 @@ class Query(graphene.ObjectType):
     @login_required
     @permission_required("template.view_template")
     def resolve_get_template_by_id(self, info, id):
-        return Template.objects.filter(id=id).first()
+        template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(info.context.user, template.company)
+        return template
 
     @login_required
     @permission_required("template.view_template")
     def resolve_get_templates_by_administrator_id(self, info):
-        return Template.objects.filter(
+        template = Template.objects.filter(
             company__administrator_id=info.context.user.id
         )
+        is_company_administrator(info.context.user, template.company)
+        return template
 
     @login_required
     @permission_required("template.view_template")
     def resolve_get_templates(self, info):
-        return Template.objects.all().order_by("-id")
+        template = Template.objects.all().order_by("-id")
+        is_company_administrator_or_invited_user(info.context.user, template.company)
+        return template
 
     def resolve_get_public_templates(self, info):
         return Template.objects.filter(
@@ -81,12 +89,16 @@ class Query(graphene.ObjectType):
     @login_required
     @permission_required("template.view_templatecategory")
     def resolve_get_template_category_id(self, info, id):
-        return TemplateCategory.objects.filter(id=id).first()
+        category = TemplateCategory.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(info.context.user, category.company)
+        return category
 
     @login_required
     @permission_required("template.view_templatecategory")
     def resolve_get_template_categories(self, info, id):
-        return TemplateCategory.objects.filter(company_id=id)
+        category = TemplateCategory.objects.filter(company_id=id)
+        is_company_administrator_or_invited_user(info.context.user, category.company)
+        return category
 
 
 class CreateTemplate(graphene.Mutation):
@@ -106,6 +118,10 @@ class CreateTemplate(graphene.Mutation):
     @permission_required("template.add_template")
     def mutate(self, info, *args, **kwargs):
         company = kwargs.get("company")
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            Company.objects.filter(id=company).first()
+        )
         name = kwargs.get("name")
         summary = kwargs.get("summary")
         content_html = kwargs.get("content_html")
@@ -145,6 +161,10 @@ class CopyTemplate(graphene.Mutation):
     def mutate(self, info, *args, **kwargs):
         template_id = kwargs.get("template")
         template = Template.objects.filter(id=template_id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             clone = template
             clone.pk = None
@@ -170,6 +190,10 @@ class UpdateHTMLinTemplate(graphene.Mutation):
         html = kwargs.get("html")
 
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template and html:
             template.content_html = html
             template.save(
@@ -214,6 +238,10 @@ class UpdateTemplate(graphene.Mutation):
         categories = kwargs.get("categories", [])
 
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             template.company_id = company
             template.name = name
@@ -257,6 +285,10 @@ class DeleteTemplate(graphene.Mutation):
     @permission_required("template.delete_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             template.delete()
             return DeleteTemplate(
@@ -276,6 +308,11 @@ class BatchDeleteTemplate(graphene.Mutation):
     @permission_required("template.delete_template")
     def mutate(self, info, **kwargs):
         objects = kwargs.get("objects", [])
+        for id in objects:
+            is_company_administrator_or_invited_user(
+                info.context.user,
+                Company.objects.filter(id=id).first()
+            )
         Template.objects.filter(id__in=objects).delete()
         return DeleteTemplate(
             verification_message="Templates in batch deleted."
@@ -292,6 +329,10 @@ class ActivateTemplate(graphene.Mutation):
     @permission_required("template.change_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             template.is_active = not template.is_active
             template.save(update_fields=["is_active"])
@@ -314,6 +355,10 @@ class MakeTemplatePublic(graphene.Mutation):
     @permission_required("template.change_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             template.is_public = not template.is_public
             template.save(update_fields=["is_public"])
@@ -336,6 +381,10 @@ class ApprovePublicTemplate(graphene.Mutation):
     @permission_required("template.change_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             template.is_approved = not template.is_approved
             template.save(update_fields=["is_approved"])
@@ -361,7 +410,10 @@ class CreateTemplateCategory(graphene.Mutation):
     def mutate(self, info, **kwargs):
         name = kwargs.get("name")
         company = kwargs.get("company")
-
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            Company.objects.filter(id=company).first()
+        )
         template_category = TemplateCategory.objects.create(
             company_id=company, name=name
         )
@@ -388,6 +440,10 @@ class UpdateTemplateCategory(graphene.Mutation):
         company = kwargs.get("company")
 
         template_category = TemplateCategory.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template_category.company
+        )
         if template_category:
             template_category.name = name
             template_category.company_id = company
@@ -415,6 +471,10 @@ class DeleteTemplateCategory(graphene.Mutation):
     @permission_required("template.delete_templatecategory")
     def mutate(self, info, id):
         template_category = TemplateCategory.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template_category.company
+        )
         if template_category:
             template_category.delete()
             return DeleteTemplateCategory(
@@ -438,6 +498,10 @@ class ExportTemplate(graphene.Mutation):
     @permission_required("template.view_template")
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
+        is_company_administrator_or_invited_user(
+            info.context.user,
+            template.company
+        )
         if template:
             if type == "pdf":
                 file = convert_html_to_pdf(template.content_html)

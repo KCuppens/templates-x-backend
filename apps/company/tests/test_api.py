@@ -1,14 +1,15 @@
 from unittest import mock
 
 import pytest
-from django.contrib.auth.models import Permission
 from graphql_jwt.testcases import JSONWebTokenTestCase
-
+from django.contrib.auth.models import Group
 from apps.company.tests.factories import CompanyFactory
-from apps.users.tests.factories import GroupFactory, UserFactory
+from apps.users.tests.factories import UserFactory
 
 
 class CompanyTestCase(JSONWebTokenTestCase):
+    fixtures = ["Group.json"]
+
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
         return CompanyFactory()
@@ -19,11 +20,7 @@ class CompanyTestCase(JSONWebTokenTestCase):
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_group(self):
-        group = GroupFactory()
-        group.permissions.set(
-            [perm.id for perm in Permission.objects.filter()]
-        )
-        self.administrator.groups.add(group)
+        return Group.objects.filter(name="Admin").first()
 
     def setUp(self):
         self.company = self.create_company()
@@ -31,6 +28,7 @@ class CompanyTestCase(JSONWebTokenTestCase):
         self.company.administrator = self.administrator
         self.company.save(update_fields=["administrator"])
         self.group = self.create_group()
+        self.administrator.groups.add(self.group)
         self.client.authenticate(self.administrator)
 
     def test_get_company_by_id(self):
@@ -152,6 +150,6 @@ class CompanyTestCase(JSONWebTokenTestCase):
         assert (
             response.data["inviteUser"]["verificationMessage"]
             ==
-            "User with test@templatesx.io has been"
+            "User with test@templatesx.io has been "
             f"invited to {self.company.name}."
         )

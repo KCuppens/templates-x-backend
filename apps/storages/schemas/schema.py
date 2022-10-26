@@ -9,6 +9,7 @@ from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import login_required, permission_required
 
 from apps.company.models import Company
+from apps.company.permissions import is_company_administrator
 from apps.s3.file_handling import init_external_session, upload_file_external
 from apps.storages.models import Storage
 
@@ -27,6 +28,10 @@ class Query(graphene.ObjectType):
     @login_required
     @permission_required("storages.view_storage")
     def resolve_get_company_storages(self, info, id, **kwargs):
+        is_company_administrator(
+            info.context.user,
+            Company.objects.filter(id=id).first()
+        )
         return Storage.objects.filter(company_id=id)
 
 
@@ -55,6 +60,10 @@ class CreateStorage(graphene.Mutation):
     def mutate(self, info, **kwargs):
         storage_type = kwargs.get("storage_type")
         company = kwargs.get("company")
+        is_company_administrator(
+            info.context.user,
+            Company.objects.filter(id=company).first()
+        )
         is_selected = kwargs.get("is_selected", False)
         if is_selected:
             Storage.objects.filter(company_id=company).update(
@@ -124,6 +133,10 @@ class UpdateStorage(graphene.Mutation):
         id = kwargs.get("id")
         storage_type = kwargs.get("storage_type")
         company = kwargs.get("company")
+        is_company_administrator(
+            info.context.user,
+            Company.objects.filter(id=company).first()
+        )
         is_selected = kwargs.get("is_selected", False)
         if is_selected:
             Storage.objects.filter(company_id=company).update(
@@ -195,7 +208,10 @@ class SelectStorage(graphene.Mutation):
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         storage = Storage.objects.filter(id=id).first()
-
+        is_company_administrator(
+            info.context.user,
+            storage.company
+        )
         if storage:
             Storage.objects.filter(company_id=storage.company).update(
                 is_selected=False
@@ -222,7 +238,10 @@ class DeleteStorage(graphene.Mutation):
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         storage = Storage.objects.filter(id=id).first()
-
+        is_company_administrator(
+            info.context.user,
+            storage.company
+        )
         if storage:
             storage.delete()
 
@@ -244,6 +263,10 @@ class UploadFile(graphene.Mutation):
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         company = Company.objects.filter(id=id).first()
+        is_company_administrator(
+            info.context.user,
+            company
+        )
         file = kwargs.get("file")
         if company:
             storage = Storage.objects.filter(
