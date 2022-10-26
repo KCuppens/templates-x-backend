@@ -8,7 +8,7 @@ from django.utils.http import urlsafe_base64_encode
 from graphene_django.utils.testing import GraphQLTestCase
 from graphql_jwt.testcases import JSONWebTokenTestCase
 from apps.company.tests.factories import CompanyFactory
-from apps.users.tests.factories import GroupFactory, UserFactory
+from apps.users.tests.factories import UserFactory
 from apps.company.models import Company
 from apps.users.tokens import account_activation_token
 
@@ -36,6 +36,8 @@ class UserTestCase(JSONWebTokenTestCase):
         self.administrator = self.create_user()
         self.group = self.create_group()
         self.administrator.groups.add(self.group)
+        self.company.administrator = self.administrator
+        self.company.save(update_fields=["administrator"])
         self.client.authenticate(self.administrator)
 
     def test_get_invited_users(self):
@@ -85,7 +87,7 @@ class UserTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        variables = {"email": "test@templatesx.io"}
+        variables = {"email": self.administrator.email}
         response = self.client.execute(query, variables)
         send_email.assert_called_once()
         assert (

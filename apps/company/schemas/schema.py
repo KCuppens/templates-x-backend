@@ -2,7 +2,6 @@ import graphene
 from django.contrib.auth import get_user_model
 from graphene_django import DjangoObjectType
 from graphql_jwt.decorators import login_required, permission_required
-
 from apps.company.models import Company
 from apps.company.permissions import is_company_administrator, is_company_administrator_or_invited_user
 from apps.mail.tasks import send_email

@@ -69,7 +69,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
         response = self.client.execute(query)
         assert (
             response.data["getTemplatesByAdministratorId"][0]["name"]
-            == "Test"
+            == self.template.name
         )
 
     def test_get_templates(self):
@@ -81,7 +81,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
             }
             """
         response = self.client.execute(query)
-        assert response.data["getTemplates"][0]["name"] == "Test"
+        assert response.data["getTemplates"][0]["name"] == self.template.name
 
     def test_get_public_templates(self):
         query = """
@@ -117,7 +117,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
             """
         variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
-        assert response.data["getTemplateCategories"][0]["name"] == "Test"
+        assert response.data["getTemplateCategories"][0]["name"] == self.template_category.name
 
     def test_create_template(self):
         query = """
@@ -163,7 +163,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
             response.data["createTemplate"]["template"]["categories"][0][
                 "name"
             ]
-            == "Test"
+            == self.template_category.name
         )
 
     def test_update_template(self):
@@ -213,7 +213,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
             response.data["updateTemplate"]["template"]["categories"][0][
                 "name"
             ]
-            == "Test"
+            == self.template_category.name
         )
 
     def test_delete_template(self):

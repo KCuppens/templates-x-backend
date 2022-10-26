@@ -1,11 +1,6 @@
 import pytest
-from django.conf import settings
-from django.contrib.auth import get_user_model
-from django.core.files.uploadedfile import SimpleUploadedFile
-from graphene_file_upload.django.testing import GraphQLFileUploadTestCase
 from graphql_jwt.testcases import JSONWebTokenTestCase
 from django.contrib.auth.models import Group
-from apps.company.models import Company
 from apps.company.tests.factories import CompanyFactory
 from apps.storages.models import Storage
 from apps.users.tests.factories import UserFactory
@@ -31,7 +26,8 @@ class StorageTestCase(JSONWebTokenTestCase):
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
         return UserFactory(
-            is_staff=True
+            is_staff=True,
+            company=self.company
         )
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
@@ -39,11 +35,12 @@ class StorageTestCase(JSONWebTokenTestCase):
         return Group.objects.filter(name="Admin").first()
 
     def setUp(self):
-        self.user = self.create_user()
-        self.group = self.create_group()
-        print(self.group)
-        self.user.groups.add(self.group)
         self.company = self.create_company()
+        self.user = self.create_user()
+        self.company.administrator = self.user
+        self.company.save(update_fields=["administrator"])
+        self.group = self.create_group()
+        self.user.groups.add(self.group)
         self.storage = self.create_storage()
         self.client.authenticate(self.user)
 
@@ -165,58 +162,4 @@ class StorageTestCase(JSONWebTokenTestCase):
         assert (
             response.data["selectStorage"]["verificationMessage"]
             == "Storage (de)selected successfully"
-        )
-
-
-class UploadFileTestCase(GraphQLFileUploadTestCase):
-    fixtures = ["Group.json"]
-    
-    @pytest.mark.django_db(transaction=True, reset_sequences=True)
-    def create_company(self):
-        return Company.objects.create(
-            administrator=self.user,
-            name="Test",
-        )
-
-    @pytest.mark.django_db(transaction=True, reset_sequences=True)
-    def create_storage(self):
-        return Storage.objects.create(
-            company=self.company,
-            access_key=settings.AWS_ACCESS_KEY,
-            secret_key=settings.AWS_SECRET_KEY,
-            bucket_name=settings.AWS_IMAGE_BUCKET,
-            region=settings.AWS_REGION,
-            is_selected=True,
-        )
-
-    @pytest.mark.django_db(transaction=True, reset_sequences=True)
-    def create_user(self):
-        return get_user_model().objects.create_user(
-            username="test", password="dolphins", is_staff=True
-        )
-
-    def setUp(self):
-        self.user = self.create_user()
-        self.company = self.create_company()
-        self.storage = self.create_storage()
-
-    def test_upload_file(self):
-        test_file = SimpleUploadedFile("assignment.pdf", b"content")
-        response = self.file_query(
-            """
-            mutation uploadFile($file: Upload!, $id: String!) {
-                uploadFile(file: $file, id: $id) {
-                    verificationMessage,
-                    url
-                }
-            }
-            """,
-            op_name="uploadFile",
-            files={"file": test_file},
-            variables={"id": str(self.company.id)},
-        )
-        assert response.json()["data"]["uploadFile"]["url"]
-        assert (
-            response.json()["data"]["uploadFile"]["verificationMessage"]
-            == "File uploaded successfully to S3"
         )

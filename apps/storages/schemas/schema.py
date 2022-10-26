@@ -258,8 +258,6 @@ class UploadFile(graphene.Mutation):
         id = graphene.String(required=True)
         file = Upload(required=True)
 
-    @login_required
-    @permission_required("storages.change_storage")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         company = Company.objects.filter(id=id).first()

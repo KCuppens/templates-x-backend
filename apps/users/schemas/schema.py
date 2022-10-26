@@ -60,12 +60,12 @@ class Query(graphene.ObjectType):
         return User.objects.filter(id=id).first()
 
     @login_required
-    @permission_required("users.view_group")
+    @permission_required("auth.view_group")
     def resolve_get_company_permission_groups(self, info, id):
         return Group.objects.filter(company_id=id)
 
     @login_required
-    @permission_required("users.view_permission")
+    @permission_required("auth.view_permission")
     def resolve_get_permissions_for_company(self, info, id):
         return Permission.objects.filter(company__id=id)
 
@@ -252,7 +252,7 @@ class CreateGroup(graphene.Mutation):
         permission = graphene.List(graphene.String)
 
     @login_required
-    @permission_required("groups.add_group")
+    @permission_required("auth.add_group")
     def mutate(self, info, **kwargs):
         name = kwargs.get("name")
         company = kwargs.get("company")
@@ -280,7 +280,7 @@ class UpdateGroup(graphene.Mutation):
         permission = graphene.List(graphene.String)
 
     @login_required
-    @permission_required("groups.change_group")
+    @permission_required("auth.change_group")
     def mutate(self, info, **kwargs):
         id = kwargs.get("id")
         name = kwargs.get("name")
@@ -306,7 +306,7 @@ class DeleteGroup(graphene.Mutation):
         id = graphene.String(required=True)
 
     @login_required
-    @permission_required("groups.delete_group")
+    @permission_required("auth.delete_group")
     def mutate(self, info, id):
         group = Group.objects.get(id=id)
         group.delete()
@@ -323,7 +323,7 @@ class AddUserToGroup(graphene.Mutation):
         group_id = graphene.String(required=True)
 
     @login_required
-    @permission_required("groups.add_user")
+    @permission_required("users.add_user")
     def mutate(self, info, user_id, group_id):
         user = User.objects.filter(id=user_id).first()
         group = Group.objects.filter(id=group_id).first()
@@ -345,7 +345,7 @@ class DeleteUserFromGroup(graphene.Mutation):
         user_id = graphene.String(required=True)
 
     @login_required
-    @permission_required("groups.delete_user")
+    @permission_required("users.delete_user")
     def mutate(self, info, group_id, user_id, **kwargs):
         if not group_id or not user_id:
             raise GraphQLError(

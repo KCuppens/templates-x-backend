@@ -1,13 +1,8 @@
 import graphene
 from graphene_django import DjangoObjectType
-from graphene_django_filter import (
-    AdvancedDjangoFilterConnectionField,
-    AdvancedFilterSet,
-)
 from graphql_jwt.decorators import login_required, staff_member_required, permission_required
 from apps.company.models import Company
 from apps.company.permissions import is_company_administrator, is_company_administrator_or_invited_user
-
 from apps.template.models import Template, TemplateCategory
 from apps.template.utils import (
     convert_html_to_docx,
@@ -23,26 +18,10 @@ class TemplateCategoryType(DjangoObjectType):
         fields = "__all__"
 
 
-class TemplateFilter(AdvancedFilterSet):
-    class Meta:
-        model = Template
-        fields = {
-            "name": ["exact", "contains"],
-            "company": ["exact"],
-            "summary": ["exact", "contains"],
-            "categories": ["exact"],
-            "is_active": ["exact"],
-            "is_public": ["exact"],
-            "is_approved": ["exact"],
-        }
-
-
 class TemplateType(DjangoObjectType):
     class Meta:
         model = Template
         fields = "__all__"
-        interfaces = (graphene.relay.Node,)
-        filterset_class = TemplateFilter
 
 
 class Query(graphene.ObjectType):
@@ -56,7 +35,7 @@ class Query(graphene.ObjectType):
     get_template_categories = graphene.List(
         TemplateCategoryType, id=graphene.String(required=True)
     )
-    get_filter_templates = AdvancedDjangoFilterConnectionField(TemplateType)
+    get_filter_templates = graphene.List(TemplateType)
 
     @login_required
     @permission_required("template.view_template")
@@ -71,14 +50,14 @@ class Query(graphene.ObjectType):
         template = Template.objects.filter(
             company__administrator_id=info.context.user.id
         )
-        is_company_administrator(info.context.user, template.company)
+        is_company_administrator(info.context.user, template.first().company)
         return template
 
     @login_required
     @permission_required("template.view_template")
     def resolve_get_templates(self, info):
         template = Template.objects.all().order_by("-id")
-        is_company_administrator_or_invited_user(info.context.user, template.company)
+        is_company_administrator_or_invited_user(info.context.user, template.first().company)
         return template
 
     def resolve_get_public_templates(self, info):
@@ -97,7 +76,7 @@ class Query(graphene.ObjectType):
     @permission_required("template.view_templatecategory")
     def resolve_get_template_categories(self, info, id):
         category = TemplateCategory.objects.filter(company_id=id)
-        is_company_administrator_or_invited_user(info.context.user, category.company)
+        is_company_administrator_or_invited_user(info.context.user, category.first().company)
         return category
 
 
@@ -311,7 +290,7 @@ class BatchDeleteTemplate(graphene.Mutation):
         for id in objects:
             is_company_administrator_or_invited_user(
                 info.context.user,
-                Company.objects.filter(id=id).first()
+                Template.objects.filter(id=id).first().company
             )
         Template.objects.filter(id__in=objects).delete()
         return DeleteTemplate(
