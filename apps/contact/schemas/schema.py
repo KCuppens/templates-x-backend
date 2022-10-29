@@ -11,6 +11,7 @@ class ContactType(DjangoObjectType):
 
 
 class CreateContact(graphene.Mutation):
+    contact = graphene.Field(ContactType)
     verification_message = graphene.String()
 
     class Arguments:
@@ -24,7 +25,7 @@ class CreateContact(graphene.Mutation):
         email = kwargs.get("email", None)
 
         if question and message and email:
-            Contact.objects.create(
+            contact = Contact.objects.create(
                 question=question, message=message, email=email
             )
             verification_message = (
@@ -32,7 +33,7 @@ class CreateContact(graphene.Mutation):
             )
         else:
             verification_message = "Please enter all data."
-        return CreateContact(verification_message=verification_message)
+        return CreateContact(contact=contact, verification_message=verification_message)
 
 
 class Mutation(graphene.ObjectType):

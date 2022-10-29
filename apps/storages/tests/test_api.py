@@ -52,7 +52,7 @@ class StorageTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        variables = {"id": self.company.id}
+        variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
         assert response.data["getCompanyStorages"][0]["id"]
 
@@ -79,7 +79,7 @@ class StorageTestCase(JSONWebTokenTestCase):
             }
             """
         variables = {
-            "company": self.company.id,
+            "company": str(self.company.id),
             "access_key": "Test description",
             "secret_key": "Test keywords",
             "bucket_name": "Test keywords",
@@ -87,6 +87,7 @@ class StorageTestCase(JSONWebTokenTestCase):
             "storage_type": "aws",
         }
         response = self.client.execute(mutation, variables)
+        print(response)
         assert response.data["createStorage"]["storage"]["id"]
 
     def test_update_storage(self):
@@ -116,7 +117,7 @@ class StorageTestCase(JSONWebTokenTestCase):
             """
         variables = {
             "id": str(self.storage.id),
-            "company": self.company.id,
+            "company": str(self.company.id),
             "access_key": "Test description",
             "secret_key": "Test keywords",
             "bucket_name": "Test keywords",

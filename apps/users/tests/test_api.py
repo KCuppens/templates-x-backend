@@ -48,7 +48,7 @@ class UserTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        variables = {"id": self.company.id}
+        variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
         assert response.data["getInvitedUsers"] == []
 
@@ -61,7 +61,7 @@ class UserTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        variables = {"id": self.company.id}
+        variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
         assert response.data["getCompanyPermissionGroups"] == []
 
@@ -74,7 +74,7 @@ class UserTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        variables = {"id": self.company.id}
+        variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
         assert response.data["getPermissionsForCompany"] == []
 
@@ -129,7 +129,7 @@ class UserTestCase(JSONWebTokenTestCase):
             }
             """
         variables = {
-            "company": self.company.id,
+            "company": str(self.company.id),
             "name": "Perm group",
         }
         response = self.client.execute(query, variables)
@@ -148,7 +148,7 @@ class UserTestCase(JSONWebTokenTestCase):
             }
             """
         variables = {
-            "id": self.group.id,
+            "id": str(self.group.id),
             "name": "Perm group",
         }
         response = self.client.execute(query, variables)
@@ -165,7 +165,7 @@ class UserTestCase(JSONWebTokenTestCase):
                 }
             }
             """
-        variables = {"id": self.group.id}
+        variables = {"id": str(self.group.id)}
         response = self.client.execute(query, variables)
         assert (
             response.data["deleteGroup"]["verificationMessage"]
@@ -182,8 +182,8 @@ class UserTestCase(JSONWebTokenTestCase):
             }
             """
         variables = {
-            "group_id": self.group.id,
-            "user_id": self.administrator.id,
+            "group_id": str(self.group.id),
+            "user_id": str(self.administrator.id),
         }
         response = self.client.execute(query, variables)
         assert (
@@ -201,8 +201,8 @@ class UserTestCase(JSONWebTokenTestCase):
             }
             """
         variables = {
-            "group_id": self.group.id,
-            "user_id": self.administrator.id,
+            "group_id": str(self.group.id),
+            "user_id": str(self.administrator.id),
         }
         response = self.client.execute(query, variables)
         assert (
@@ -300,6 +300,7 @@ class UserAuthTestCase(GraphQLTestCase):
             """,
             variables={"email": "test", "password": "dolphins"},
         )
+        print(response)
         assert (
             response.json()["data"]["loginUser"]["verificationMessage"]
             == "You logged in successfully."

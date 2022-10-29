@@ -18,3 +18,7 @@ pyOpenSSL==22.0.0
 python-decouple==3.6
 python-graphql-client==0.4.3
 Pillow==9.2.0
+google-cloud-storage==2.5.0
+pdfkit==1.0.0
+html2image==2.0.1
+htmldocx==0.0.6

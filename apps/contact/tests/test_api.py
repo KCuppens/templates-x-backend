@@ -1,10 +1,9 @@
-from graphene_django.utils.testing import GraphQLTestCase
+from graphql_jwt.testcases import JSONWebTokenTestCase
 
 
-class ContactTestCase(GraphQLTestCase):
+class ContactTestCase(JSONWebTokenTestCase):
     def test_create_contact(self):
-        response = self.query(
-            """
+        query ="""
             mutation createContact(
                 $question: String!,
                 $message: String!,
@@ -16,14 +15,14 @@ class ContactTestCase(GraphQLTestCase):
                     verificationMessage
                 }
             }
-            """,
-            variables={
-                "question": "Test question",
-                "message": "Test message",
-                "email": "Test email",
-            },
-        )
+            """
+        variables = {
+            "question": "Test question",
+            "message": "Test message",
+            "email": "Test email",
+        }
+        response = self.client.execute(query, variables)
         assert (
-            response.json()["data"]["createContact"]["verificationMessage"]
+            response.data["createContact"]["verificationMessage"]
             == "Thanks for contacting us. We will get back to you ASAP."
         )
