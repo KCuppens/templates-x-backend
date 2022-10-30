@@ -36,11 +36,10 @@ jobs:
     - name: Migrate DB
       run: |
         python manage.py makemigrations auth users --settings=app.settings.development
-        black --line-length 79 apps/users/migrations/
         python manage.py migrate --settings=app.settings.development
     - name: Run flake8
       run: |
-        flake8
+        flake8 --exclude apps/users/migrations/0002_user_groups_user_user_permissions_and_more.py
     - name: Run Tests
       run: |
         pytest
