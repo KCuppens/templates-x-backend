@@ -12,7 +12,6 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("auth", "0013_group_company_permission_company"),
     ]
 
     operations = [
@@ -102,17 +101,6 @@ class Migration(migrations.Migration):
                 (
                     "active_company",
                     models.CharField(blank=True, max_length=255, null=True),
-                ),
-                (
-                    "groups",
-                    models.ManyToManyField(
-                        blank=True,
-                        help_text="The groups this user belongs to. A user will get all permissions granted to each of their groups.",
-                        related_name="user_set",
-                        related_query_name="user",
-                        to="auth.group",
-                        verbose_name="groups",
-                    ),
                 ),
                 (
                     "user_permissions",
