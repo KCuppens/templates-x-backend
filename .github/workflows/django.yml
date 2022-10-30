@@ -35,7 +35,7 @@ jobs:
         python -m pip install -r requirements/development.txt  
     - name: Migrate DB
       run: |
-        python manage.py makemigrations auth --settings=app.settings.development
+        python manage.py makemigrations auth users --settings=app.settings.development
         python manage.py migrate --settings=app.settings.development
     - name: Run flake8
       run: |
