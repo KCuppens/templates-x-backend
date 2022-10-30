@@ -1,8 +1,9 @@
 from unittest import mock
 
 import pytest
-from graphql_jwt.testcases import JSONWebTokenTestCase
 from django.contrib.auth.models import Group
+from graphql_jwt.testcases import JSONWebTokenTestCase
+
 from apps.company.tests.factories import CompanyFactory
 from apps.users.tests.factories import UserFactory
 
@@ -83,8 +84,7 @@ class CompanyTestCase(JSONWebTokenTestCase):
         print(response)
         assert len(response.data) == 1
         assert (
-            response.data["getCompanyFiltered"][0]["name"]
-            == self.company.name
+            response.data["getCompanyFiltered"][0]["name"] == self.company.name
         )
 
     def test_create_company(self):
@@ -149,7 +149,6 @@ class CompanyTestCase(JSONWebTokenTestCase):
         send_email.assert_called_once()
         assert (
             response.data["inviteUser"]["verificationMessage"]
-            ==
-            "User with test@templatesx.io has been "
+            == "User with test@templatesx.io has been "
             f"invited to {self.company.name}."
         )

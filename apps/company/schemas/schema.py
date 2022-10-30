@@ -2,8 +2,10 @@ import graphene
 from django.contrib.auth import get_user_model
 from graphene_django import DjangoObjectType
 from graphql_jwt.decorators import login_required, permission_required
+
 from apps.company.models import Company
-from apps.company.permissions import is_company_administrator, is_company_administrator_or_invited_user
+from apps.company.permissions import (is_company_administrator,
+                                      is_company_administrator_or_invited_user)
 from apps.mail.tasks import send_email
 
 
@@ -49,11 +51,8 @@ class Query(graphene.ObjectType):
     def resolve_get_company_filtered(self, info, name=None):
         if name:
             company = Company.objects.filter(
-                name__icontains=name,
-                is_administrator=info.context.user
-            ).order_by(
-                "-id"
-            )
+                name__icontains=name, is_administrator=info.context.user
+            ).order_by("-id")
         company = Company.objects.all().order_by("-id")
         return company
 
