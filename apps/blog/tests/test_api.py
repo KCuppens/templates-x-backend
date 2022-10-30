@@ -63,9 +63,7 @@ class BlogTestCase(JSONWebTokenTestCase):
             response.data["getBlogDetail"]["description"]
             == self.blog.description
         )
-        assert (
-            response.data["getBlogDetail"]["keywords"] == self.blog.keywords
-        )
+        assert response.data["getBlogDetail"]["keywords"] == self.blog.keywords
 
     def test_create_blog(self):
         mutation = """

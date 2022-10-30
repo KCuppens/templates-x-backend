@@ -16,7 +16,8 @@ def is_company_administrator_or_invited_user(user, company):
     print(user not in company.invited_users.all())
     if (
         not user == company.administrator
-        and
-        user not in company.invited_users.all()
+        and user not in company.invited_users.all()
     ):
-        raise PermissionDenied("You are not the company administrator or invited user.")
+        raise PermissionDenied(
+            "You are not the company administrator or invited user."
+        )

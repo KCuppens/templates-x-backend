@@ -33,7 +33,9 @@ class CreateContact(graphene.Mutation):
             )
         else:
             verification_message = "Please enter all data."
-        return CreateContact(contact=contact, verification_message=verification_message)
+        return CreateContact(
+            contact=contact, verification_message=verification_message
+        )
 
 
 class Mutation(graphene.ObjectType):

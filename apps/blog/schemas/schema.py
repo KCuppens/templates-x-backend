@@ -2,6 +2,7 @@ import graphene
 from graphene_django import DjangoObjectType
 from graphene_file_upload.scalars import Upload
 from graphql_jwt.decorators import staff_member_required
+
 from apps.blog.models import Blog
 
 
@@ -83,9 +84,7 @@ class UpdateBlog(graphene.Mutation):
             verification_message = "Blog has been updated."
         else:
             verification_message = "Blog doesn't exist."
-        return UpdateBlog(
-            blog=blog, verification_message=verification_message
-        )
+        return UpdateBlog(blog=blog, verification_message=verification_message)
 
 
 class DeleteBlog(graphene.Mutation):

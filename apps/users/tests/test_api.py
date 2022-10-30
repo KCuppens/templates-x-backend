@@ -7,9 +7,10 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from graphene_django.utils.testing import GraphQLTestCase
 from graphql_jwt.testcases import JSONWebTokenTestCase
+
+from apps.company.models import Company
 from apps.company.tests.factories import CompanyFactory
 from apps.users.tests.factories import UserFactory
-from apps.company.models import Company
 from apps.users.tokens import account_activation_token
 
 
@@ -22,10 +23,7 @@ class UserTestCase(JSONWebTokenTestCase):
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
-        return UserFactory(
-            is_staff=True,
-            company=self.company
-        )
+        return UserFactory(is_staff=True, company=self.company)
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_group(self):
@@ -213,7 +211,7 @@ class UserTestCase(JSONWebTokenTestCase):
 
 class UserAuthTestCase(GraphQLTestCase):
     fixtures = ["Group.json"]
-    
+
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_company(self):
         return Company.objects.create(name="Test")

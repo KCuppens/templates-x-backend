@@ -29,7 +29,7 @@ Group.add_to_class(
         on_delete=models.CASCADE,
         related_name="company_group_permissions",
         null=True,
-        blank=True
+        blank=True,
     ),
 )
 Permission.add_to_class(

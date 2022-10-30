@@ -3,7 +3,7 @@ from graphql_jwt.testcases import JSONWebTokenTestCase
 
 class ContactTestCase(JSONWebTokenTestCase):
     def test_create_contact(self):
-        query ="""
+        query = """
             mutation createContact(
                 $question: String!,
                 $message: String!,

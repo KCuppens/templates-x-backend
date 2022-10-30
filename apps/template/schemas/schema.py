@@ -1,15 +1,14 @@
 import graphene
 from graphene_django import DjangoObjectType
-from graphql_jwt.decorators import login_required, staff_member_required, permission_required
+from graphql_jwt.decorators import (login_required, permission_required,
+                                    staff_member_required)
+
 from apps.company.models import Company
-from apps.company.permissions import is_company_administrator, is_company_administrator_or_invited_user
+from apps.company.permissions import (is_company_administrator,
+                                      is_company_administrator_or_invited_user)
 from apps.template.models import Template, TemplateCategory
-from apps.template.utils import (
-    convert_html_to_docx,
-    convert_html_to_jpeg,
-    convert_html_to_pdf,
-    convert_html_to_png,
-)
+from apps.template.utils import (convert_html_to_docx, convert_html_to_jpeg,
+                                 convert_html_to_pdf, convert_html_to_png)
 
 
 class TemplateCategoryType(DjangoObjectType):
@@ -41,7 +40,9 @@ class Query(graphene.ObjectType):
     @permission_required("template.view_template")
     def resolve_get_template_by_id(self, info, id):
         template = Template.objects.filter(id=id).first()
-        is_company_administrator_or_invited_user(info.context.user, template.company)
+        is_company_administrator_or_invited_user(
+            info.context.user, template.company
+        )
         return template
 
     @login_required
@@ -57,7 +58,9 @@ class Query(graphene.ObjectType):
     @permission_required("template.view_template")
     def resolve_get_templates(self, info):
         template = Template.objects.all().order_by("-id")
-        is_company_administrator_or_invited_user(info.context.user, template.first().company)
+        is_company_administrator_or_invited_user(
+            info.context.user, template.first().company
+        )
         return template
 
     def resolve_get_public_templates(self, info):
@@ -69,14 +72,18 @@ class Query(graphene.ObjectType):
     @permission_required("template.view_templatecategory")
     def resolve_get_template_category_id(self, info, id):
         category = TemplateCategory.objects.filter(id=id).first()
-        is_company_administrator_or_invited_user(info.context.user, category.company)
+        is_company_administrator_or_invited_user(
+            info.context.user, category.company
+        )
         return category
 
     @login_required
     @permission_required("template.view_templatecategory")
     def resolve_get_template_categories(self, info, id):
         category = TemplateCategory.objects.filter(company_id=id)
-        is_company_administrator_or_invited_user(info.context.user, category.first().company)
+        is_company_administrator_or_invited_user(
+            info.context.user, category.first().company
+        )
         return category
 
 
@@ -98,8 +105,7 @@ class CreateTemplate(graphene.Mutation):
     def mutate(self, info, *args, **kwargs):
         company = kwargs.get("company")
         is_company_administrator_or_invited_user(
-            info.context.user,
-            Company.objects.filter(id=company).first()
+            info.context.user, Company.objects.filter(id=company).first()
         )
         name = kwargs.get("name")
         summary = kwargs.get("summary")
@@ -117,9 +123,7 @@ class CreateTemplate(graphene.Mutation):
             is_active=is_active,
         )
         for category in categories:
-            category_obj = TemplateCategory.objects.filter(
-                id=category
-            ).first()
+            category_obj = TemplateCategory.objects.filter(id=category).first()
             if category_obj:
                 template.categories.add(category_obj)
         return CreateTemplate(
@@ -141,8 +145,7 @@ class CopyTemplate(graphene.Mutation):
         template_id = kwargs.get("template")
         template = Template.objects.filter(id=template_id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             clone = template
@@ -170,8 +173,7 @@ class UpdateHTMLinTemplate(graphene.Mutation):
 
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template and html:
             template.content_html = html
@@ -218,8 +220,7 @@ class UpdateTemplate(graphene.Mutation):
 
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             template.company_id = company
@@ -265,8 +266,7 @@ class DeleteTemplate(graphene.Mutation):
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             template.delete()
@@ -290,7 +290,7 @@ class BatchDeleteTemplate(graphene.Mutation):
         for id in objects:
             is_company_administrator_or_invited_user(
                 info.context.user,
-                Template.objects.filter(id=id).first().company
+                Template.objects.filter(id=id).first().company,
             )
         Template.objects.filter(id__in=objects).delete()
         return DeleteTemplate(
@@ -309,8 +309,7 @@ class ActivateTemplate(graphene.Mutation):
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             template.is_active = not template.is_active
@@ -319,9 +318,7 @@ class ActivateTemplate(graphene.Mutation):
                 verification_message="Template activated successfully."
             )
         else:
-            return ActivateTemplate(
-                verification_message="Template not found."
-            )
+            return ActivateTemplate(verification_message="Template not found.")
 
 
 class MakeTemplatePublic(graphene.Mutation):
@@ -335,8 +332,7 @@ class MakeTemplatePublic(graphene.Mutation):
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             template.is_public = not template.is_public
@@ -361,8 +357,7 @@ class ApprovePublicTemplate(graphene.Mutation):
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             template.is_approved = not template.is_approved
@@ -390,8 +385,7 @@ class CreateTemplateCategory(graphene.Mutation):
         name = kwargs.get("name")
         company = kwargs.get("company")
         is_company_administrator_or_invited_user(
-            info.context.user,
-            Company.objects.filter(id=company).first()
+            info.context.user, Company.objects.filter(id=company).first()
         )
         template_category = TemplateCategory.objects.create(
             company_id=company, name=name
@@ -420,8 +414,7 @@ class UpdateTemplateCategory(graphene.Mutation):
 
         template_category = TemplateCategory.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template_category.company
+            info.context.user, template_category.company
         )
         if template_category:
             template_category.name = name
@@ -451,8 +444,7 @@ class DeleteTemplateCategory(graphene.Mutation):
     def mutate(self, info, id):
         template_category = TemplateCategory.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template_category.company
+            info.context.user, template_category.company
         )
         if template_category:
             template_category.delete()
@@ -478,8 +470,7 @@ class ExportTemplate(graphene.Mutation):
     def mutate(self, info, id):
         template = Template.objects.filter(id=id).first()
         is_company_administrator_or_invited_user(
-            info.context.user,
-            template.company
+            info.context.user, template.company
         )
         if template:
             if type == "pdf":

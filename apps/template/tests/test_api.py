@@ -1,10 +1,10 @@
 import pytest
-from django.contrib.auth import get_user_model
+from django.contrib.auth.models import Group
 from graphql_jwt.testcases import JSONWebTokenTestCase
 
 from apps.company.tests.factories import CompanyFactory
-from django.contrib.auth.models import Group
-from apps.template.tests.factories import TemplateCategoryFactory, TemplateFactory
+from apps.template.tests.factories import (TemplateCategoryFactory,
+                                           TemplateFactory)
 from apps.users.tests.factories import UserFactory
 
 
@@ -25,9 +25,7 @@ class TemplateTestCase(JSONWebTokenTestCase):
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_user(self):
-        return UserFactory(
-            is_staff=True
-        )
+        return UserFactory(is_staff=True)
 
     @pytest.mark.django_db(transaction=True, reset_sequences=True)
     def create_group(self):
@@ -117,7 +115,10 @@ class TemplateTestCase(JSONWebTokenTestCase):
             """
         variables = {"id": str(self.company.id)}
         response = self.client.execute(query, variables)
-        assert response.data["getTemplateCategories"][0]["name"] == self.template_category.name
+        assert (
+            response.data["getTemplateCategories"][0]["name"]
+            == self.template_category.name
+        )
 
     def test_create_template(self):
         query = """
